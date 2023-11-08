@@ -1,0 +1,10 @@
+{
+	"id": "notes-merger",
+	"name": "Notes Merger",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "Merge notes into a single markdown document based on index Markdown file.",
+	"author": "Nika Lopusna",
+	"authorUrl": "https://github.com/niffka",
+	"isDesktopOnly": true
+}
