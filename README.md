@@ -1,5 +1,5 @@
 ## Notes Merger
-![notes merger preview](https://github.com/niffka/obsidian_addon/blob/master/src/img/generate_markdown.png)
+![notes merger preview](https://github.com/niffka/notes-merger/blob/main/src/img/generate_markdown.png)
 
 This plugin enables you to merge multiple Markdown files into a single, unified Markdown file. The merge process is driven by the content specified in your index Markdown file and linked markdown files.
 
