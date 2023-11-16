@@ -90,6 +90,8 @@ export class GenerateMarkdown extends ItemView {
 
 		// filter out anchor links ([[#foobar]])
 		cleanLinks = cleanLinks.filter(cl => !cl.startsWith('#'));
+		
+		cleanLinks = cleanLinks.filter(cl => !cl.startsWith(`${this.settings.literatureNote}#`));
 
 		const existingNotes = cleanLinks.map((cl: string) => {
 			cl = fixSpaceInName(cl);
@@ -163,7 +165,8 @@ export class GenerateMarkdown extends ItemView {
 
 		// transform links to anchor in index note 
 		this.mainNameLinks.forEach((mnl: string) => {
-			
+
+			mnl = fixSpaceInName(mnl);
 			mainNote = mainNote.replaceAll(`[[${mnl}]]`, `[[#${mnl}]]`)
 		});
 
@@ -209,15 +212,15 @@ export class GenerateMarkdown extends ItemView {
 			}
 
 			// replace titles with just bold text
-			noteRows = note.split('\n');
-			note = noteRows.map((noteRow: string) => {
-				const match = noteRow.match(/# (\w+)/);
+			// noteRows = note.split('\n');
+			// note = noteRows.map((noteRow: string) => {
+			// 	const match = noteRow.match(/# (\w+)/);
 				
-				if (match)
-					return `**${match[1]}**`;
+			// 	if (match)
+			// 		return `**${match[1]}**`;
 
-				return noteRow;
-			}).join("\n");
+			// 	return noteRow;
+			// }).join("\n");
 			
 			// remove 'Kam dál' part
 			if (note.includes(this.settings.listOfLinksKeyword)) {
@@ -251,7 +254,7 @@ export class GenerateMarkdown extends ItemView {
 		
 		Object.keys(linksObj).forEach(key => {
 			const {parentRef, ...rest} = linksObj[key as keyof BuildLinkTreeType] as BuildLinkTreeType; 
-			linksArr.push({...rest, parent: (linksObj[key as keyof BuildLinkTreeType] as BuildLinkTreeType)?.parentRef ?.name});
+			linksArr.push({...rest, parent: (linksObj[key as keyof BuildLinkTreeType] as BuildLinkTreeType)?.parentRef?.name});
 		});
 
 		const getNestedChildren = (arr: LinkTreeType[], parent: string | undefined) => {

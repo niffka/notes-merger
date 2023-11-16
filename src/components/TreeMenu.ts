@@ -46,13 +46,13 @@ export class TreeMenu {
 				state = false; 
 
 			new Checkbox(li, state, link.exists, () => {
-				const children = [linkEl.link.name, ...flattenChildren(linkEl.link, [])];
+				const ignoredChildren = [linkEl.link.name, ...flattenChildren(linkEl.link, [])];
 
 				if (state == false) { 
 					// remove children from childrenLinks
-					childrenLinks = childrenLinks.filter((cl: string) => !children.includes(cl));
+					childrenLinks = childrenLinks.filter((cl: string) => !ignoredChildren.includes(cl));
 				} else {
-					childrenLinks.push(...children);
+					childrenLinks.push(...ignoredChildren);
 					
 					// remove dupes
 					childrenLinks = [...new Set(childrenLinks)]
