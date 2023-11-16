@@ -12,7 +12,7 @@ export class SaveModal extends Modal {
   onOpen() {
     const { contentEl } = this;
 
-    contentEl.createEl("h1", { text: "Save As" });
+    contentEl.createEl("h1", { text: "Save as" });
 
     new Setting(contentEl)
       .setName("File name: ")

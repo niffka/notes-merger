@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, Notice, TAbstractFile, TFile, App } from "obsidian";
+import { ItemView, WorkspaceLeaf, Notice, TAbstractFile, TFile, App, Setting } from "obsidian";
 import { fixSpaceInName, getNoteByName } from '../utils';
 
 import { GenerateMarkdownPluginSettingsType } from '../../main';
@@ -59,6 +59,7 @@ export class GenerateMarkdown extends ItemView {
 	async onOpen() {
 		const container = this.containerEl.children[1];
 
+		//console.log(this.containerEl);
 		this.container = container;
 		container.empty();
 
@@ -84,6 +85,7 @@ export class GenerateMarkdown extends ItemView {
 
 	parseLinks(text: string, index: boolean = false) {
 		const links = text.matchAll(/\[\[(.*?)\]\]/g);
+		//console.log([...links]);
 		let cleanLinks = [...links].map(l => l[1]);
 
 		cleanLinks = [...new Set(cleanLinks)];
@@ -92,6 +94,7 @@ export class GenerateMarkdown extends ItemView {
 		cleanLinks = cleanLinks.filter(cl => !cl.startsWith('#'));
 
 		const existingNotes = cleanLinks.map((cl: string) => {
+			
 			cl = fixSpaceInName(cl);
 
 			if (!!GenerateMarkdown.imageTypes.filter((it: string) => cl.includes(it.toLowerCase())).length) {
@@ -119,8 +122,9 @@ export class GenerateMarkdown extends ItemView {
 				inline: isInline,
 				index: isIndex
 			};
-		}).filter(Boolean);
 
+		}).filter(Boolean);
+		//console.log(existingNotes);
 		return existingNotes as LinkTreeType[];
 	}
 
@@ -128,7 +132,7 @@ export class GenerateMarkdown extends ItemView {
 		this.loadedFiles = app.vault.getAllLoadedFiles();
 
 		const activeNote = this.app.workspace.getActiveFile();
-
+		
 		if (!activeNote) {
 			new Notice(`Selected note is invalid.`);
 			throw new Error("Selected note is invalid.");
@@ -139,16 +143,19 @@ export class GenerateMarkdown extends ItemView {
 		const mainContentLinks = this.parseLinks(activeNoteText, true);
 
 		this.mainNameLinks = mainContentLinks.map((l: LinkTreeType) => l.name);
-
-		this.linksTree = this.generateNotesHierarchy(mainContentLinks);
-
+		
 		const title = activeNote.basename;
+		this.linksTree = this.generateNotesHierarchy(mainContentLinks, title);
+		//console.log("tree", this.linksTree);
+
+		
 		new BaseLink(this.app, this.structure, title);
 
 		new TreeMenu(this.app, this.structure, this.linksTree, (ignoredLinks: string[]) => {
 			this.ignoredLinks = ignoredLinks;
+			//console.log("ignored",ignoredLinks);
 		});
-
+		
 		new Button(this.generateMarkdownParent, 'Generate markdown', () => {
 			
 			// cleanup
@@ -244,35 +251,12 @@ export class GenerateMarkdown extends ItemView {
 				this.composeMarkdown(link.children);
 		});
 	}
-
-	generateNotesHierarchy(links: LinkTreeType[]) {
-		const linksObj: BuildLinkTreeType = this.dfs(links, 0);
-		let linksArr: LinkTreeType[] = [];
-		
-		Object.keys(linksObj).forEach(key => {
-			const {parentRef, ...rest} = linksObj[key as keyof BuildLinkTreeType] as BuildLinkTreeType; 
-			linksArr.push({...rest, parent: (linksObj[key as keyof BuildLinkTreeType] as BuildLinkTreeType)?.parentRef ?.name});
-		});
-
-		const getNestedChildren = (arr: LinkTreeType[], parent: string | undefined) => {
-			let children = [];
-			for(let i = 0; i < arr.length; i++) {
-				if(arr[i].parent == parent) {
-					const grandChildren = getNestedChildren(arr, arr[i].name);
-					if(grandChildren.length) {
-						arr[i].children = grandChildren;
-					}
-					children.push(arr[i]);
-				}
-			}
-			return children;
-		}
-		return getNestedChildren(linksArr, undefined);
-	}
-
+	
+	// whole path from note to root
 	dfs(links: BuildLinkTreeType[], level: number, parentRef?: object, titleMapping?: object) {
 
 		titleMapping = (titleMapping as BuildLinkTreeType) ?? {}; 
+		
 		links.forEach((link: BuildLinkTreeType, order: number) => {
 
 			// skip link from mainContent
@@ -284,6 +268,7 @@ export class GenerateMarkdown extends ItemView {
 				return;
 
 			this.processed.push(link.name);
+			//console.log(link.name);
 
 			const note = getNoteByName(link.name, this.loadedFiles);
 			const subLinks = this.parseLinks(note);
@@ -292,12 +277,94 @@ export class GenerateMarkdown extends ItemView {
 
 			(titleMapping as any)[link.name] = { ...link, parentRef, level: this.maxLevel, order};
 
-		  if (links.length > 0) {
+		  if (subLinks.length > 0) {
 			this.dfs(subLinks, this.maxLevel, (titleMapping as any)[link.name], titleMapping);
 		  }
 		});
-		return titleMapping as BuildLinkTreeType;
+		//console.log("TM", JSON.stringify(titleMapping));
+		return titleMapping as BuildLinkTreeType;	
 	}
+
+
+	//getting children for notes
+	generateNotesHierarchy(links: LinkTreeType[], title: string) {
+		const linksObj: BuildLinkTreeType = this.dfs(links, 0);
+		console.log("linkobj", linksObj);
+		let linksArr: LinkTreeType[] = [];
+		
+		Object.keys(linksObj).forEach(key => {
+			const {parentRef, ...rest} = linksObj[key as keyof BuildLinkTreeType] as BuildLinkTreeType; 
+			linksArr.push({...rest, parent: (linksObj[key as keyof BuildLinkTreeType] as BuildLinkTreeType)?.parentRef?.name});
+		});
+
+		console.log("LA", linksArr);
+
+		//presentation slides
+		
+		let maxDepth = Number(this.settings.slidesDepth);
+		function getChildren(parent: LinkTreeType){
+			
+			console.log("depth", startDepth);
+			let children: LinkTreeType[] = linksArr.filter((child) => child.parent === parent.name);
+			console.log("children", children);
+			if(startDepth <= maxDepth){
+				children.forEach(child => {
+					slidesList +=  "\n" + "#".repeat(startDepth + 1) + child.name;
+					if (startDepth != maxDepth){
+						startDepth += 1;
+						getChildren(child);
+					}else {
+						console.log("čaau");
+						return;
+					}
+					startDepth -= 1;				
+				})
+				
+			}
+		}
+
+		let slidesList = "";
+		let slides = linksArr.filter((link) => link.level === 1);
+		console.log("SLIDES", slides);
+		let startDepth: number;
+		slides.forEach(slide => {
+			startDepth = 2;
+			slidesList +=  "\n ##" + slide.name;
+			getChildren(slide);	
+		})
+		console.log("slideList", slidesList);
+
+		
+		
+
+
+
+
+
+
+
+
+
+		const createChildrenFromParent = (arr: LinkTreeType[], parent: string | undefined) => {
+			let childrenArr = [];
+			for(let i = 0; i < arr.length; i++) {
+				//index links = undefined
+				if(arr[i].parent == parent) {
+					const children = createChildrenFromParent(arr, arr[i].name);
+					if(children.length) {
+						arr[i].children = children;
+					}
+					childrenArr.push(arr[i]);
+				}
+			}
+			//console.log("CHA", childrenArr);
+			return childrenArr;
+		}
+		//console.log("nestedchilder", getNestedChildren(linksArr, undefined));
+		return createChildrenFromParent(linksArr, undefined);
+	}
+
+	
 
 	async onClose() {
 		// Nothing to clean up.

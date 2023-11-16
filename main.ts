@@ -4,11 +4,13 @@ import { GenerateMarkdown, VIEW_CONTENT_COMPOSE_NOTES } from './src/views/genera
 export interface GenerateMarkdownPluginSettingsType {
 	listOfLinksKeyword: string;
 	literatureNote: string;
+	slidesDepth: string;
 }
 
 const DEFAULT_SETTINGS: GenerateMarkdownPluginSettingsType = {
 	listOfLinksKeyword: 'Kam dál',
-	literatureNote: 'Literature'
+	literatureNote: 'Literature',
+	slidesDepth: '2',
 }
 
 export default class GenerateMarkdownPlugin extends Plugin {
@@ -81,6 +83,17 @@ class GenerateMarkdownPluginSettingTab extends PluginSettingTab {
 					this.plugin.settings.listOfLinksKeyword = value;
 					await this.plugin.saveSettings();
 				}));
+		
+		new Setting(containerEl)
+		.setName('Depth of slides')
+		.setDesc('How many layer are gonna be created into slides.')
+		.addText(text => text
+			.setPlaceholder('Default is 2 layers.')
+			.setValue(this.plugin.settings.slidesDepth)
+			.onChange(async (value) => {
+				this.plugin.settings.slidesDepth = value;
+				await this.plugin.saveSettings();
+			}));
 
 		new Setting(containerEl)
 		.setName('Literature note')

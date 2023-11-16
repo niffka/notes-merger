@@ -47,7 +47,7 @@ export class TreeMenu {
 
 			new Checkbox(li, state, link.exists, () => {
 				const children = [linkEl.link.name, ...flattenChildren(linkEl.link, [])];
-
+				console.log("flatten", children);
 				if (state == false) { 
 					// remove children from childrenLinks
 					childrenLinks = childrenLinks.filter((cl: string) => !children.includes(cl));
@@ -61,7 +61,7 @@ export class TreeMenu {
 				this.ignoredLinks = childrenLinks;
 				
 				// cleanup and rerender
-				this.UL.empty()
+				this.UL.empty();
 				this.render(this.linksTree, this.UL, childrenLinks, event);
 			});
 
