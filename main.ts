@@ -30,10 +30,12 @@ export default class GenerateMarkdownPlugin extends Plugin {
 	}
 
 	async activateGenerateMarkdownView() {
-		await this.app.workspace.getRightLeaf(false).setViewState({
-		  type: VIEW_CONTENT_COMPOSE_NOTES,
-		  active: true,
-		});
+		if (!this.app.workspace.getLeavesOfType(VIEW_CONTENT_COMPOSE_NOTES).length) {
+			await this.app.workspace.getRightLeaf(false).setViewState({
+				type: VIEW_CONTENT_COMPOSE_NOTES,
+				active: true,
+			  });
+		}
 	
 		this.app.workspace.revealLeaf(
 		  this.app.workspace.getLeavesOfType(VIEW_CONTENT_COMPOSE_NOTES)[0]

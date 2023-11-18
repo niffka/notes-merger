@@ -190,8 +190,6 @@ export class GenerateMarkdown extends ItemView {
 			let note = await getNoteByName(this.app, link.path);
 			const localLinks = this.parseLinks(note);
 
-			console.log(localLinks);
-
 			if (this.ignoredLinks.includes(link.name))
 				return;
 
@@ -245,7 +243,7 @@ export class GenerateMarkdown extends ItemView {
 
 	async generateNotesHierarchy(links: LinkTreeType[]) {
 		const linksObj: BuildLinkTreeType = await this.dfs(links, 0, []);
-		console.log(linksObj);
+
 		let linksArr: LinkTreeType[] = [];
 		
 		Object.keys(linksObj).forEach(key => {
