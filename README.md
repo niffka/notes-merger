@@ -38,9 +38,9 @@ Use sentence case in UI
 
 
 - [ ] BuildLinkTreeType is wrong
-- [ ] add settings to include main note 
-- [ ] add settings to add preview content to beginning of note 
-- [ ] settings to dont add index to content
+- [x] add settings to include main note 
+- [x] add settings to add preview content to beginning of note 
+- [x] settings to dont add index to content
 - [ ] so this shoudlnt be settings, but radio button?
 
 

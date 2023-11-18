@@ -4,11 +4,15 @@ import { GenerateMarkdown, VIEW_CONTENT_COMPOSE_NOTES } from './src/views/genera
 export interface GenerateMarkdownPluginSettingsType {
 	listOfLinksKeyword: string;
 	literatureNote: string;
+	insertPreviewContent: boolean;
+	insertIndexNote: boolean;
 }
 
 const DEFAULT_SETTINGS: GenerateMarkdownPluginSettingsType = {
 	listOfLinksKeyword: 'Kam dál',
-	literatureNote: 'Literature'
+	literatureNote: 'Literature',
+	insertPreviewContent: true,
+	insertIndexNote: false
 }
 
 export default class GenerateMarkdownPlugin extends Plugin {
@@ -87,5 +91,26 @@ class GenerateMarkdownPluginSettingTab extends PluginSettingTab {
 				this.plugin.settings.literatureNote = value;
 				await this.plugin.saveSettings();
 			}));
+
+		new Setting(containerEl)
+		.setName('Include generated preview')
+		.setDesc('Insert preview structure at the beginning of the merged note.')
+		.addToggle(toggle => toggle
+			.setValue(this.plugin.settings.insertPreviewContent)
+			.onChange(value => {
+				this.plugin.settings.insertPreviewContent = value;
+			})
+		);
+
+		new Setting(containerEl)
+		.setName('Include index note')
+		.setDesc('Insert index note at the beginning of the merged note.')
+		.addToggle(toggle => toggle
+			.setValue(this.plugin.settings.insertIndexNote)
+			.onChange(value => {
+				this.plugin.settings.insertIndexNote = value;
+			})
+		);
+
 	}
 }
