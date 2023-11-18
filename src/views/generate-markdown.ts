@@ -23,6 +23,7 @@ export interface LinkTreeType {
 	inline: boolean;
 	level?: number;
 	order?: number;
+	path: string;
 }
 
 interface BuildLinkTreeType extends LinkTreeType{
@@ -48,6 +49,8 @@ export class GenerateMarkdown extends ItemView {
 	markdown: string = "";
 	ignoredLinks: string[] = [];
 	images: string[] = [];
+
+	promises: any = [];
 
 	static imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'tiff', 'bmp'].map((it: string) => `.${it}`);
 
@@ -115,19 +118,21 @@ export class GenerateMarkdown extends ItemView {
 			}
 
 			const note = this.loadedFiles.find((f: TFile) => f['basename'] === cl);
+
 			return {
 				name: cl,
 				exists: !!note,	
 				inline: isInline,
-				index: isIndex
+				index: isIndex,
+				path: note?.path
 			};
 		}).filter(Boolean);
 
 		return existingNotes as LinkTreeType[];
 	}
 
-	readSelectedNote() {
-		this.loadedFiles = app.vault.getAllLoadedFiles();
+	async readSelectedNote() {
+		this.loadedFiles = app.vault.getMarkdownFiles();
 
 		const activeNote = this.app.workspace.getActiveFile();
 
@@ -135,14 +140,13 @@ export class GenerateMarkdown extends ItemView {
 			new Notice(`Selected note is invalid.`);
 			throw new Error("Selected note is invalid.");
 		}
-
-		const activeNoteText = getNoteByName(activeNote.basename, this.loadedFiles);
+		const activeNoteText = await getNoteByName(this.app, activeNote.path);
 
 		const mainContentLinks = this.parseLinks(activeNoteText, true);
-
+		
 		this.mainNameLinks = mainContentLinks.map((l: LinkTreeType) => l.name);
 
-		this.linksTree = this.generateNotesHierarchy(mainContentLinks);
+		this.linksTree = await this.generateNotesHierarchy(mainContentLinks);
 
 		const title = activeNote.basename;
 		new BaseLink(this.app, this.structure, title);
@@ -172,19 +176,21 @@ export class GenerateMarkdown extends ItemView {
 
 		this.markdown = mainNote + this.markdown;
 
-		new SaveModal(this.app, (fileName) => {
-			this.app.vault.adapter.write(`${fileName}.md`, this.markdown).then(() => {
-				new Notice(`Note ${fileName} created successfully`);
-				this.app.workspace.openLinkText(`${fileName}.md`, "")
-			});
+		new SaveModal(this.app, async (fileName) => {
+			await this.app.vault.adapter.write(`${fileName}.md`, this.markdown)
+			new Notice(`Note ${fileName} created successfully`);
+			this.app.workspace.openLinkText(`${fileName}.md`, "")
+			
 		}).open();
 		
 	}
 
 	composeMarkdown(links: LinkTreeType[]) {
-		links.forEach((link: LinkTreeType) => {
-			let note = getNoteByName(link.name, this.loadedFiles);
+		links.forEach(async (link: LinkTreeType) => {
+			let note = await getNoteByName(this.app, link.path);
 			const localLinks = this.parseLinks(note);
+
+			console.log(localLinks);
 
 			if (this.ignoredLinks.includes(link.name))
 				return;
@@ -210,17 +216,6 @@ export class GenerateMarkdown extends ItemView {
 				noteRows.shift();
 				note = noteRows.join("\n").trim();
 			}
-
-			// replace titles with just bold text
-			// noteRows = note.split('\n');
-			// note = noteRows.map((noteRow: string) => {
-			// 	const match = noteRow.match(/# (\w+)/);
-				
-			// 	if (match)
-			// 		return `**${match[1]}**`;
-
-			// 	return noteRow;
-			// }).join("\n");
 			
 			// remove 'Kam dál' part
 			if (note.includes(this.settings.listOfLinksKeyword)) {
@@ -248,8 +243,9 @@ export class GenerateMarkdown extends ItemView {
 		});
 	}
 
-	generateNotesHierarchy(links: LinkTreeType[]) {
-		const linksObj: BuildLinkTreeType = this.dfs(links, 0);
+	async generateNotesHierarchy(links: LinkTreeType[]) {
+		const linksObj: BuildLinkTreeType = await this.dfs(links, 0, []);
+		console.log(linksObj);
 		let linksArr: LinkTreeType[] = [];
 		
 		Object.keys(linksObj).forEach(key => {
@@ -273,32 +269,32 @@ export class GenerateMarkdown extends ItemView {
 		return getNestedChildren(linksArr, undefined);
 	}
 
-	dfs(links: BuildLinkTreeType[], level: number, parentRef?: object, titleMapping?: object) {
-
+	async dfs(links: BuildLinkTreeType[], level: number, processed: string[], parentRef?: object, titleMapping?: object) {
 		titleMapping = (titleMapping as BuildLinkTreeType) ?? {}; 
-		links.forEach((link: BuildLinkTreeType, order: number) => {
+
+		for await (const [order, link] of links.entries()) {
 
 			// skip link from mainContent
 			if (this.mainNameLinks.includes(link.name) && level != 0)
-				return;
+				continue;
 
 			// skip if link is already processed
-			if (this.processed.includes(link.name))
-				return;
+			if (processed.includes(link.name)) {
+				continue;
+			}
+			processed.push(link.name);
 
-			this.processed.push(link.name);
-
-			const note = getNoteByName(link.name, this.loadedFiles);
+			const note = await getNoteByName(this.app, link.path)
 			const subLinks = this.parseLinks(note);
-
+		
 			this.maxLevel = level + 1;
 
 			(titleMapping as any)[link.name] = { ...link, parentRef, level: this.maxLevel, order};
 
-		  if (links.length > 0) {
-			this.dfs(subLinks, this.maxLevel, (titleMapping as any)[link.name], titleMapping);
-		  }
-		});
+			if (links.length > 0)
+				await this.dfs(subLinks, this.maxLevel, processed, (titleMapping as any)[link.name], titleMapping);
+		}
+
 		return titleMapping as BuildLinkTreeType;
 	}
 

@@ -30,8 +30,6 @@ export default class GenerateMarkdownPlugin extends Plugin {
 	}
 
 	async activateGenerateMarkdownView() {
-		this.app.workspace.detachLeavesOfType(VIEW_CONTENT_COMPOSE_NOTES);
-	
 		await this.app.workspace.getRightLeaf(false).setViewState({
 		  type: VIEW_CONTENT_COMPOSE_NOTES,
 		  active: true,
@@ -43,7 +41,6 @@ export default class GenerateMarkdownPlugin extends Plugin {
 	}
 
 	onunload() {
-		this.app.workspace.detachLeavesOfType(VIEW_CONTENT_COMPOSE_NOTES);
 	}
 
 	async loadSettings() {
