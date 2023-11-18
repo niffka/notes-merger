@@ -50,7 +50,7 @@ export class GenerateMarkdown extends ItemView {
 	ignoredLinks: string[] = [];
 	images: string[] = [];
 
-	promises: any = [];
+	previewContent: string = '';
 
 	static imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'tiff', 'bmp'].map((it: string) => `.${it}`);
 
@@ -167,20 +167,25 @@ export class GenerateMarkdown extends ItemView {
 	generateMarkdownFile(links: LinkTreeType[], mainNote: string) {
 		this.composeMarkdown(links);
 
-		// transform links to anchor in index note 
-		this.mainNameLinks.forEach((mnl: string) => {
+		if (this.settings.insertIndexNote) {
+			// transform links to anchor in index note 
+			this.mainNameLinks.forEach((mnl: string) => {
+				mnl = fixSpaceInName(mnl);
+				mainNote = mainNote.replaceAll(`[[${mnl}]]`, `[[#${mnl}]]`)
+			});
 
-			mnl = fixSpaceInName(mnl);
-			mainNote = mainNote.replaceAll(`[[${mnl}]]`, `[[#${mnl}]]`)
-		});
+			this.markdown = mainNote + this.markdown;
+		}
 
-		this.markdown = mainNote + this.markdown;
+		if (this.settings.insertPreviewContent) {
+			const contentPreview = this.makeContentPreviewMD(this.linksTree, "");
+			this.markdown = contentPreview + this.markdown;
+		}
 
 		new SaveModal(this.app, async (fileName) => {
 			await this.app.vault.adapter.write(`${fileName}.md`, this.markdown)
 			new Notice(`Note ${fileName} created successfully`);
-			this.app.workspace.openLinkText(`${fileName}.md`, "")
-			
+			this.app.workspace.openLinkText(`${fileName}.md`, "")	
 		}).open();
 		
 	}
@@ -189,8 +194,6 @@ export class GenerateMarkdown extends ItemView {
 		links.forEach(async (link: LinkTreeType) => {
 			let note = await getNoteByName(this.app, link.path);
 			const localLinks = this.parseLinks(note);
-
-			console.log(localLinks);
 
 			if (this.ignoredLinks.includes(link.name))
 				return;
@@ -245,7 +248,7 @@ export class GenerateMarkdown extends ItemView {
 
 	async generateNotesHierarchy(links: LinkTreeType[]) {
 		const linksObj: BuildLinkTreeType = await this.dfs(links, 0, []);
-		console.log(linksObj);
+
 		let linksArr: LinkTreeType[] = [];
 		
 		Object.keys(linksObj).forEach(key => {
@@ -296,6 +299,24 @@ export class GenerateMarkdown extends ItemView {
 		}
 
 		return titleMapping as BuildLinkTreeType;
+	}
+
+	makeContentPreviewMD(links: LinkTreeType[], previewContent: string = "") {
+		links.forEach((link: LinkTreeType) => {
+			if (link.exists && link.level) {
+				if (this.ignoredLinks.includes(link.name))
+					return;
+
+				const tabs = Array(link.level - 1).fill('\t').join('');
+
+				previewContent += `${tabs}- [[${link.name}]]\n`;
+			}
+
+			if ('children' in link)
+				previewContent += this.makeContentPreviewMD(link.children);
+		});
+
+		return previewContent;
 	}
 
 	async onClose() {
