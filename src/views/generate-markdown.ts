@@ -2,6 +2,7 @@ import { ItemView, WorkspaceLeaf, Notice, TAbstractFile, TFile, App } from "obsi
 import { fixSpaceInName, getNoteByName } from '../utils';
 
 import { GenerateMarkdownPluginSettingsType } from '../../main';
+import { generateSlidesMarkdown } from './generate-slides-markdown';
 
 import {
 	Button, 
@@ -39,6 +40,7 @@ export class GenerateMarkdown extends ItemView {
 	structure: Element;
 	generatePreviewParent: Element;
 	generateMarkdownParent: Element;
+	generateSlidesParent: Element;
 
 	linksTree: LinkTreeType[] = [];
 	loadedFiles: TAbstractFile[] = [];
@@ -49,8 +51,6 @@ export class GenerateMarkdown extends ItemView {
 	markdown: string = "";
 	ignoredLinks: string[] = [];
 	images: string[] = [];
-
-	promises: any = [];
 
 	static imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'tiff', 'bmp'].map((it: string) => `.${it}`);
 
@@ -68,6 +68,7 @@ export class GenerateMarkdown extends ItemView {
 		this.toolbar = container.createEl("div");
 		this.generatePreviewParent = this.toolbar.createEl('span');
 		this.generateMarkdownParent = this.toolbar.createEl('span');
+		this.generateSlidesParent = this.toolbar.createEl('span');
 		this.structure = this.container.createEl("div");
 
 		new Button(this.generatePreviewParent, 'Generate preview', () => {
@@ -81,6 +82,7 @@ export class GenerateMarkdown extends ItemView {
 			
 			this.structure.empty();
 			this.generateMarkdownParent.empty();
+			this.generateSlidesParent.empty();
 			this.readSelectedNote();
 		});
 	}
@@ -162,6 +164,10 @@ export class GenerateMarkdown extends ItemView {
 
 			this.generateMarkdownFile(this.linksTree, activeNoteText);
 		}, { cls: 'generate-markdown-btn' });
+
+		new Button(this.generateSlidesParent, 'Generate slides', () => {
+			generateSlidesMarkdown(this.linksTree);
+		}, { cls: 'generate-markdown-btn' })
 	}
 
 	generateMarkdownFile(links: LinkTreeType[], mainNote: string) {
@@ -189,8 +195,6 @@ export class GenerateMarkdown extends ItemView {
 		links.forEach(async (link: LinkTreeType) => {
 			let note = await getNoteByName(this.app, link.path);
 			const localLinks = this.parseLinks(note);
-
-			console.log(localLinks);
 
 			if (this.ignoredLinks.includes(link.name))
 				return;
@@ -245,7 +249,6 @@ export class GenerateMarkdown extends ItemView {
 
 	async generateNotesHierarchy(links: LinkTreeType[]) {
 		const linksObj: BuildLinkTreeType = await this.dfs(links, 0, []);
-		console.log(linksObj);
 		let linksArr: LinkTreeType[] = [];
 		
 		Object.keys(linksObj).forEach(key => {
