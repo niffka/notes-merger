@@ -45,3 +45,4 @@ Use sentence case in UI
 
 
 - [ ] link should point to correct note path (Technologie webovych aplikaci)
+- [ ] generate presentation
