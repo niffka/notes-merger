@@ -102,3 +102,11 @@ If your plugin does not need CSS, delete this file.
 .generate-markdown-btn {
 	margin-left: 5px;
 }
+
+.slide-row {
+	line-height: 3.5em;
+}
+
+.row-right {
+	float: right;
+}

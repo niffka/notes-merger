@@ -1,35 +1,20 @@
 import { ItemView, WorkspaceLeaf, Notice, TAbstractFile, TFile, App } from "obsidian";
 import { fixSpaceInName, getNoteByName } from '../utils';
-
+import { LinkTreeType, BuildLinkTreeType, SlideType } from "src/types";
 import { GenerateMarkdownPluginSettingsType } from '../../main';
-import { generateSlidesMarkdown } from './generate-slides-markdown';
+import { SlidesMarkdown } from './generate-slides-markdown';
 
 import {
 	Button, 
 	BaseLink,
 	SaveModal, 
 	TreeMenu,
+	SlidesModal
 } from '../components/index';
 
 
 export const VIEW_CONTENT_COMPOSE_NOTES = "view-generate-markdown";
 
-
-export interface LinkTreeType {
-	name: string;
-	parent?: string | undefined;
-	children: LinkTreeType[];
-	index: boolean;
-	exists: boolean;
-	inline: boolean;
-	level?: number;
-	order?: number;
-	path: string;
-}
-
-interface BuildLinkTreeType extends LinkTreeType{
-	parentRef?: BuildLinkTreeType;
-}
 
 export class GenerateMarkdown extends ItemView {
 	
@@ -165,8 +150,17 @@ export class GenerateMarkdown extends ItemView {
 			this.generateMarkdownFile(this.linksTree, activeNoteText);
 		}, { cls: 'generate-markdown-btn' });
 
-		new Button(this.generateSlidesParent, 'Generate slides', () => {
-			generateSlidesMarkdown(this.linksTree);
+		new Button(this.generateSlidesParent, 'Generate slideshow', () => {
+			new SlidesModal(this.app, this.linksTree, this.ignoredLinks, (slides: SlideType[], hasTitleSlide: boolean, hasLastSlide: boolean) => {
+				const slidesMD = new SlidesMarkdown(slides, title, hasTitleSlide, hasLastSlide);
+
+				new SaveModal(this.app, async (fileName) => {
+					await this.app.vault.adapter.write(`${fileName}.md`, slidesMD.slideshow)
+					new Notice(`Slideshow ${fileName} created successfully`);
+					this.app.workspace.openLinkText(`${fileName}.md`, "")
+
+				}).open();
+			}).open();
 		}, { cls: 'generate-markdown-btn' })
 	}
 
@@ -186,7 +180,6 @@ export class GenerateMarkdown extends ItemView {
 			await this.app.vault.adapter.write(`${fileName}.md`, this.markdown)
 			new Notice(`Note ${fileName} created successfully`);
 			this.app.workspace.openLinkText(`${fileName}.md`, "")
-			
 		}).open();
 		
 	}

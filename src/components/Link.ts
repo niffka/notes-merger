@@ -1,5 +1,5 @@
 import { App } from "obsidian";
-import { LinkTreeType } from "src/views/generate-markdown";
+import { LinkTreeType } from "src/types";
 
 export class BaseLink {
 	context: App;

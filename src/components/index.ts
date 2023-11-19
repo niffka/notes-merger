@@ -4,7 +4,8 @@ import { ToggleButton } from './ToggleButton';
 import { SaveModal } from './SaveModal';
 import { TreeMenu } from './TreeMenu';
 import { Checkbox } from './Checkbox';
+import { SlidesModal } from './SlidesModal';
 
 export {
-	Button, BaseLink, Link, ToggleButton, SaveModal, TreeMenu, Checkbox
+	Button, BaseLink, Link, ToggleButton, SaveModal, TreeMenu, Checkbox, SlidesModal 
 }

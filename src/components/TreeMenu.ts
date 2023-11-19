@@ -1,5 +1,5 @@
 import { App } from 'obsidian';
-import { LinkTreeType } from '../views/generate-markdown';
+import { LinkTreeType } from 'src/types';
 import {
 	Link, Checkbox
 } from './index';
