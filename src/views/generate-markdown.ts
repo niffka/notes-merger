@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, Notice, TAbstractFile, TFile, App } from "obsidian";
+import { ItemView, WorkspaceLeaf, Notice, TAbstractFile, TFile } from "obsidian";
 import { fixSpaceInName, getNoteByName } from '../utils';
 import { LinkTreeType, BuildLinkTreeType, SlideType } from "src/types";
 import { GenerateMarkdownPluginSettingsType } from '../../main';
@@ -82,7 +82,7 @@ export class GenerateMarkdown extends ItemView {
 
 		// filter out anchor links ([[#foobar]])
 		cleanLinks = cleanLinks.filter(cl => !cl.startsWith('#'));
-		
+
 		cleanLinks = cleanLinks.filter(cl => !cl.startsWith(`${this.settings.literatureNote}#`));
 
 		const existingNotes = cleanLinks.map((cl: string) => {
@@ -156,18 +156,21 @@ export class GenerateMarkdown extends ItemView {
 			new SlidesModal(this.app, this.linksTree, this.ignoredLinks, (slides: SlideType[], hasTitleSlide: boolean, hasLastSlide: boolean) => {
 				const slidesMD = new SlidesMarkdown(slides, title, hasTitleSlide, hasLastSlide);
 
-				new SaveModal(this.app, async (fileName) => {
-					await this.app.vault.adapter.write(`${fileName}.md`, slidesMD.slideshow)
-					new Notice(`Slideshow ${fileName} created successfully`);
-					this.app.workspace.openLinkText(`${fileName}.md`, "")
+				new SaveModal(this.app, async (path: string) => {
+					await this.app.vault.adapter.write(path, slidesMD.slideshow)
+					new Notice(`Slideshow ${path} created successfully`);
+					this.app.workspace.openLinkText(path, "")
 
 				}).open();
 			}).open();
 		}, { cls: 'generate-markdown-btn' })
 	}
 
-	generateMarkdownFile(links: LinkTreeType[], mainNote: string) {
+	async generateMarkdownFile(links: LinkTreeType[], mainNote: string) {
+
 		this.composeMarkdown(links);
+
+		this.markdown = this.markdown.trim();
 
 		if (this.settings.insertIndexNote) {
 			// transform links to anchor in index note 
@@ -176,80 +179,89 @@ export class GenerateMarkdown extends ItemView {
 				mainNote = mainNote.replaceAll(`[[${mnl}]]`, `[[#${mnl}]]`)
 			});
 
-			this.markdown = mainNote + this.markdown;
+			this.markdown = mainNote + '\n' + this.markdown;
 		}
 
 		if (this.settings.insertPreviewContent) {
-			const contentPreview = this.makeContentPreviewMD(this.linksTree, "");
-			this.markdown = contentPreview + this.markdown;
+			const contentPreview = this.makeContentPreviewMD(links, "");
+			this.markdown = contentPreview + '\n' + this.markdown;
 		}
 
-		new SaveModal(this.app, async (fileName) => {
-			await this.app.vault.adapter.write(`${fileName}.md`, this.markdown)
-			new Notice(`Note ${fileName} created successfully`);
-			this.app.workspace.openLinkText(`${fileName}.md`, "");
+		new SaveModal(this.app, async (path: string) => {		
+			await this.app.vault.adapter.write(path, this.markdown)
+			new Notice(`Note ${path} created successfully`);
+			this.app.workspace.openLinkText(path, "");
 		}).open();
 		
 	}
 
 	composeMarkdown(links: LinkTreeType[]) {
-		links.forEach(async (link: LinkTreeType) => {
-			let note = await getNoteByName(this.app, link.path);
-			const localLinks = this.parseLinks(note);
+		const inlineLinks = links.filter(link => link.inline);
+		this.markdown = this.insertToNearestNewLine(this.markdown, inlineLinks);
+
+		links.forEach((link: LinkTreeType) => {
 
 			if (this.ignoredLinks.includes(link.name))
 				return;
 
 			// trim enters and spaces
-			note = note.trim();
+			let note = link.note.trim();
 
 			if (note.length == 0)
 				return;
-
-			// transform links to anchors
-			localLinks.forEach((localLink: LinkTreeType) => {
-				if (localLink.inline && this.ignoredLinks.includes(localLink.name))
-					note = note.replaceAll(`[[${localLink.name}]]`, localLink.name);
-				else
-					note = note.replaceAll(`[[${localLink.name}]]`, `[[#${localLink.name}]]`)
-			})
-
-			// remove title on a first line
-			let noteRows = note.split('\n');
-			let firstRow = fixSpaceInName(noteRows[0]);
-			if (firstRow.includes(`# ${link.name}`)) {
-				noteRows.shift();
-				note = noteRows.join("\n").trim();
-			}
 			
+			note = this.cleanNote(link, note);
+
 			// remove 'Kam dál' part
 			if (note.includes(this.settings.listOfLinksKeyword)) {
 				let [importantPart, endPart] = note.split(this.settings.listOfLinksKeyword);
 				note = importantPart.trim();
 			}
 			
-			// generate nested title e.g. h3 -> ### title3
-			let title = "";
-			if (link.inline) {
-				// h5
-				title = `##### ${link.name}`;
-			} else {
-				const nestedLevel = Array(link.level).fill('#').join('');
-				title = `${nestedLevel} ${link.name}`;
-			}
+			const title = this.transformTitle(link);
 
-			note = `\n\n${title}\n${note}`;
+			note = `${title}\n${note}`;
 
-			// should be last
-			this.markdown += note;
+			if (!link.inline)
+				this.markdown += `\n${note}\n`;
+
+			this.markdown = this.markdown.replace(`[[${link.name}]]`, `[[#${link.name}]]`);
 
 			if ('children' in link)
 				this.composeMarkdown(link.children);
 		});
 	}
 
+	cleanNote(link: LinkTreeType, note: string) {
+		// remove title on a first line
+		let noteRows = note.split('\n');
+		let firstRow = fixSpaceInName(noteRows[0]);
+		if (firstRow.includes(`# ${link.name}`)) {
+			noteRows.shift();
+			note = noteRows.join("\n").trim();
+		}
+		
+		// remove status tag (#dokoncene, #rozpracovane)
+		note = note.replace(/#[\w\s]+\n/g, "");
+
+		return note;
+	}
+
+	transformTitle(link: LinkTreeType) {
+		let title = "";
+		if (link.inline) {
+			// h5
+			title = `##### ${link.name}`;
+		} else {
+			// nested title e.g. h3 -> ### title3
+			const nestedLevel = Array(link.level).fill('#').join('');
+			title = `${nestedLevel} ${link.name}`;
+		}
+		return title;
+	}
+
 	async generateNotesHierarchy(links: LinkTreeType[]) {
-		const linksObj: BuildLinkTreeType = await this.dfs(links, 0, []);
+		const linksObj: BuildLinkTreeType = await this.createParentStructure(links, 0, []);
 		let linksArr: LinkTreeType[] = [];
 		
 		Object.keys(linksObj).forEach(key => {
@@ -257,11 +269,11 @@ export class GenerateMarkdown extends ItemView {
 			linksArr.push({...rest, parent: (linksObj[key as keyof BuildLinkTreeType] as BuildLinkTreeType)?.parentRef?.name});
 		});
 
-		const getNestedChildren = (arr: LinkTreeType[], parent: string | undefined) => {
+		const buildChildrenFromParents = (arr: LinkTreeType[], parent: string | undefined) => {
 			let children = [];
 			for(let i = 0; i < arr.length; i++) {
 				if(arr[i].parent == parent) {
-					const grandChildren = getNestedChildren(arr, arr[i].name);
+					const grandChildren = buildChildrenFromParents(arr, arr[i].name);
 					if(grandChildren.length) {
 						arr[i].children = grandChildren;
 					}
@@ -270,10 +282,10 @@ export class GenerateMarkdown extends ItemView {
 			}
 			return children;
 		}
-		return getNestedChildren(linksArr, undefined);
+		return buildChildrenFromParents(linksArr, undefined);
 	}
 
-	async dfs(links: BuildLinkTreeType[], level: number, processed: string[], parentRef?: object, titleMapping?: object) {
+	async createParentStructure(links: BuildLinkTreeType[], level: number, processed: string[], parentRef?: object, titleMapping?: object) {
 		titleMapping = (titleMapping as BuildLinkTreeType) ?? {}; 
 
 		for await (const [order, link] of links.entries()) {
@@ -283,20 +295,25 @@ export class GenerateMarkdown extends ItemView {
 				continue;
 
 			// skip if link is already processed
-			if (processed.includes(link.name)) {
+			if (processed.includes(link.name))
 				continue;
-			}
+
 			processed.push(link.name);
 
-			const note = await getNoteByName(this.app, link.path)
+			let note = await getNoteByName(this.app, link.path)
 			const subLinks = this.parseLinks(note);
 		
 			this.maxLevel = level + 1;
 
-			(titleMapping as any)[link.name] = { ...link, parentRef, level: this.maxLevel, order};
+			if (note.includes(this.settings.listOfLinksKeyword)) {
+				let [importantPart, endPart] = note.split(this.settings.listOfLinksKeyword);
+				note = importantPart.trim();
+			}
+
+			(titleMapping as any)[link.name] = { ...link, parentRef, level: this.maxLevel, order, note};
 
 			if (links.length > 0)
-				await this.dfs(subLinks, this.maxLevel, processed, (titleMapping as any)[link.name], titleMapping);
+				await this.createParentStructure(subLinks, this.maxLevel, processed, (titleMapping as any)[link.name], titleMapping);
 		}
 
 		return titleMapping as BuildLinkTreeType;
@@ -310,7 +327,7 @@ export class GenerateMarkdown extends ItemView {
 
 				const tabs = Array(link.level - 1).fill('\t').join('');
 
-				previewContent += `${tabs}- [[${link.name}]]\n`;
+				previewContent += `${tabs}- [[#${link.name}]]\n`;
 			}
 
 			if ('children' in link)
@@ -318,6 +335,54 @@ export class GenerateMarkdown extends ItemView {
 		});
 
 		return previewContent;
+	}
+
+	insertToNearestNewLine(note: string, links: LinkTreeType[]) {
+		// find common line
+		// create array at that line
+		// if new common comes, push it to
+		// at the end make it simple string
+
+		let specialArr: (string|[])[] = [];
+	
+		const rows = note.split("\n");
+		const emptyLines: number[] = [];
+		rows.forEach((row, index) => {
+			if (row == "") { 
+				specialArr.push([]);
+				emptyLines.push(index);
+			} else
+				specialArr.push(row);
+		})
+		specialArr.push([]);
+		emptyLines.push(specialArr.length-1)
+
+		links.forEach(link => {
+			const index = specialArr.findIndex(row => typeof row === 'string' && row.includes(`[[${link.name}]]`))
+		
+			//only consider numbers higher than the target
+			const findClosestHigher = emptyLines.filter(candidate => candidate > index)[0];
+
+			const title = this.transformTitle(link);
+
+			// trim enters and spaces
+			let note = link.note.trim();
+
+			if (note.length == 0)
+				return;
+
+			if (this.ignoredLinks.includes(link.name))
+				return;
+
+			note = this.cleanNote(link, note);
+
+			(specialArr[findClosestHigher] as Array<string>).push('\n', title, note);
+		});
+
+		// flatten and join to string
+		return specialArr
+			.map(row => typeof row === 'string' ? row : row.join("\n"))
+			.join("\n");
 	}
 
 	async onClose() {

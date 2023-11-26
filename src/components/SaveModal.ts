@@ -1,12 +1,19 @@
-import { App, Modal, Setting } from "obsidian";
+import { App, Modal, Setting, TAbstractFile, TFolder, normalizePath } from "obsidian";
 
 export class SaveModal extends Modal {
-  result: string;
-  onSubmit: (result: string) => void;
+  name: string;
+  folder: string;
+  onSubmit: (filePath: string) => void;
+  isDisabled: boolean = true;
 
-  constructor(app: App, onSubmit: (result: string) => void) {
+  constructor(app: App, onSubmit: (filePath: string) => void) {
     super(app);
     this.onSubmit = onSubmit;
+  }
+
+  getFolders() {
+	const folders = this.app.vault.getAllLoadedFiles().filter((file: TAbstractFile) => file instanceof TFolder);
+	return folders.reduce((obj: Record<string, string>, item: TAbstractFile) => (obj[item.path] = item.path, obj), {});
   }
 
   onOpen() {
@@ -14,21 +21,34 @@ export class SaveModal extends Modal {
 
     contentEl.createEl("h1", { text: "Save as" });
 
+	const folders = this.getFolders();
+
     new Setting(contentEl)
       .setName("File name: ")
       .addText((text) =>
         text.onChange((value) => {
-          this.result = value
+          this.name = value
         }));
+
+	new Setting(contentEl)
+      .setName("Select folder: ")
+      .addDropdown((dropdown) =>
+        dropdown
+			.addOptions(folders)
+			.onChange((value: string) => {
+				this.folder = value;
+			})
+	  );
 
     new Setting(contentEl)
       .addButton((btn) =>
         btn
-          .setButtonText("Generate markdown note")
+          .setButtonText("Generate note")
           .setCta()
           .onClick(() => {
             this.close();
-            this.onSubmit(this.result);
+			this.folder = this.folder ?? this.app.vault.getRoot().path;
+			this.onSubmit(normalizePath(`${this.folder}/${this.name}.md`));
           }));
   }
 

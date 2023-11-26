@@ -6,13 +6,15 @@ export interface GenerateMarkdownPluginSettingsType {
 	literatureNote: string;
 	insertPreviewContent: boolean;
 	insertIndexNote: boolean;
+	removeStatusTag: boolean;
 }
 
 const DEFAULT_SETTINGS: GenerateMarkdownPluginSettingsType = {
 	listOfLinksKeyword: 'Kam dál',
 	literatureNote: 'Literature',
 	insertPreviewContent: true,
-	insertIndexNote: false
+	insertIndexNote: false,
+	removeStatusTag: true
 }
 
 export default class GenerateMarkdownPlugin extends Plugin {
@@ -111,6 +113,16 @@ class GenerateMarkdownPluginSettingTab extends PluginSettingTab {
 			.setValue(this.plugin.settings.insertIndexNote)
 			.onChange(value => {
 				this.plugin.settings.insertIndexNote = value;
+			})
+		);
+
+		new Setting(containerEl)
+		.setName('Remove status note tag')
+		.setDesc('Always remove note status tag information from note.')
+		.addToggle(toggle => toggle
+			.setValue(this.plugin.settings.removeStatusTag)
+			.onChange(value => {
+				this.plugin.settings.removeStatusTag = value;
 			})
 		);
 

@@ -8,6 +8,7 @@ export interface LinkTreeType {
 	level?: number;
 	order?: number;
 	path: string;
+	note: string;
 }
 
 export interface BuildLinkTreeType extends LinkTreeType{
