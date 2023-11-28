@@ -6,7 +6,6 @@ export const fixSpaceInName = (name: string) => {
 
 export const getNoteByName = async (app: App, path: string) => {
 	const file = app.vault.getAbstractFileByPath(path);
-
 	if (!(file instanceof TFile))
 		return "";	
 

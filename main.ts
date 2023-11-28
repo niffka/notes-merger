@@ -1,6 +1,6 @@
 import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
-import { GenerateMarkdown, VIEW_CONTENT_COMPOSE_NOTES } from './src/views/generate-markdown';
-
+import { GenerateMarkdown, VIEW_CONTENT_COMPOSE_NOTES } from 'src/views/generate-markdown';
+import { GenerateLatex } from 'src/views/generate-latex';
 export interface GenerateMarkdownPluginSettingsType {
 	listOfLinksKeyword: string;
 	literatureNote: string;
@@ -32,6 +32,14 @@ export default class GenerateMarkdownPlugin extends Plugin {
 		
 		this.addRibbonIcon("scroll", "NotesMerger", () => {
 			this.activateGenerateMarkdownView();
+		});
+
+		this.addCommand({
+			id: "generate latex",
+			name: "generate latex from markdown",
+			callback: () => {
+				new GenerateLatex(this.app, this.settings);
+			},
 		});
 	}
 
