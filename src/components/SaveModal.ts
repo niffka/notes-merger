@@ -5,10 +5,12 @@ export class SaveModal extends Modal {
   folder: string;
   onSubmit: (filePath: string) => void;
   isDisabled: boolean = true;
+  displayToggle: boolean = true
 
-  constructor(app: App, onSubmit: (filePath: string) => void) {
+  constructor(app: App, onSubmit: (filePath: string) => void, displayToggle = true) {
     super(app);
     this.onSubmit = onSubmit;
+	this.displayToggle = displayToggle;
   }
 
   getFolders() {
@@ -29,27 +31,28 @@ export class SaveModal extends Modal {
         text.onChange((value) => {
           this.name = value
         }));
+	if (this.displayToggle) {
+		new Setting(contentEl)
+		.setName("Select folder: ")
+		.addDropdown((dropdown) =>
+			dropdown
+				.addOptions(folders)
+				.onChange((value: string) => {
+					this.folder = value;
+				})
+		);
+	}
 
 	new Setting(contentEl)
-      .setName("Select folder: ")
-      .addDropdown((dropdown) =>
-        dropdown
-			.addOptions(folders)
-			.onChange((value: string) => {
-				this.folder = value;
-			})
-	  );
-
-    new Setting(contentEl)
-      .addButton((btn) =>
-        btn
-          .setButtonText("Generate note")
-          .setCta()
-          .onClick(() => {
-            this.close();
+	.addButton((btn) =>
+		btn
+		.setButtonText("Generate note")
+		.setCta()
+		.onClick(() => {
+			this.close();
 			this.folder = this.folder ?? this.app.vault.getRoot().path;
 			this.onSubmit(normalizePath(`${this.folder}/${this.name}.md`));
-          }));
+		}));
   }
 
   onClose() {
