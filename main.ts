@@ -7,6 +7,8 @@ export interface GenerateMarkdownPluginSettingsType {
 	insertPreviewContent: boolean;
 	insertIndexNote: boolean;
 	removeStatusTag: boolean;
+	metadataNote: string;
+	latexImagesDirectoryName: string;
 }
 
 const DEFAULT_SETTINGS: GenerateMarkdownPluginSettingsType = {
@@ -14,7 +16,9 @@ const DEFAULT_SETTINGS: GenerateMarkdownPluginSettingsType = {
 	literatureNote: 'Literature',
 	insertPreviewContent: true,
 	insertIndexNote: false,
-	removeStatusTag: true
+	removeStatusTag: true,
+	metadataNote: 'PEF Thesis Metadata',
+	latexImagesDirectoryName: 'obrazky'
 }
 
 export default class GenerateMarkdownPlugin extends Plugin {
@@ -103,14 +107,26 @@ class GenerateMarkdownPluginSettingTab extends PluginSettingTab {
 				this.plugin.settings.literatureNote = value;
 				await this.plugin.saveSettings();
 			}));
+		
+		new Setting(containerEl)
+		.setName('PEF Mendelu template thesis metadata note')
+		.setDesc('Note should include title, acknowledgements, abstract (czech, english), keywords (czech, english), declaration')
+		.addText(text => text
+			.setPlaceholder(`Defaults to "${this.plugin.settings.metadataNote}"`)
+			.setValue(this.plugin.settings.metadataNote)
+			.onChange(async (value) => {
+				this.plugin.settings.metadataNote = value;
+				await this.plugin.saveSettings();
+			}));
 
 		new Setting(containerEl)
 		.setName('Include generated preview')
 		.setDesc('Insert preview structure at the beginning of the merged note.')
 		.addToggle(toggle => toggle
 			.setValue(this.plugin.settings.insertPreviewContent)
-			.onChange(value => {
+			.onChange(async value => {
 				this.plugin.settings.insertPreviewContent = value;
+				await this.plugin.saveSettings();
 			})
 		);
 
@@ -119,8 +135,10 @@ class GenerateMarkdownPluginSettingTab extends PluginSettingTab {
 		.setDesc('Insert index note at the beginning of the merged note.')
 		.addToggle(toggle => toggle
 			.setValue(this.plugin.settings.insertIndexNote)
-			.onChange(value => {
+			.onChange(async value => {
 				this.plugin.settings.insertIndexNote = value;
+				await this.plugin.saveSettings();
+
 			})
 		);
 
@@ -129,10 +147,22 @@ class GenerateMarkdownPluginSettingTab extends PluginSettingTab {
 		.setDesc('Always remove note status tag information from note.')
 		.addToggle(toggle => toggle
 			.setValue(this.plugin.settings.removeStatusTag)
-			.onChange(value => {
+			.onChange(async value => {
 				this.plugin.settings.removeStatusTag = value;
+				await this.plugin.saveSettings();
 			})
 		);
+
+		new Setting(containerEl)
+		.setName('Directory name inside generated latex folder')
+		.setDesc('Includes images found in markdown.')
+		.addText(text => text
+			.setPlaceholder(`Defaults to "${this.plugin.settings.latexImagesDirectoryName}"`)
+			.setValue(this.plugin.settings.latexImagesDirectoryName)
+			.onChange(async (value) => {
+				this.plugin.settings.latexImagesDirectoryName = value;
+				await this.plugin.saveSettings();
+			}));
 
 	}
 }

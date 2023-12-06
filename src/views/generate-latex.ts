@@ -1,4 +1,7 @@
-import { Notice, App, TFile, } from 'obsidian';
+import * as fs from 'fs';
+import * as path from 'path';
+
+import { Notice, App, TFile, TAbstractFile, } from 'obsidian';
 import { CitationType, LatexImageType, LatexErrorType } from 'src/types';
 import { fromMarkdown} from 'mdast-util-from-markdown'
 import { Root, Code, Heading, Text, InlineCode, Parent } from 'mdast-util-from-markdown/lib'
@@ -6,7 +9,9 @@ import { GenerateMarkdownPluginSettingsType } from 'main';
 
 import { getNoteByName } from "src/utils";
 import { RootContent } from 'mdast';
-
+import { PEFTemplate } from 'src/latex-template/pef.template';
+import { SaveModal } from 'src/components';
+import { formatDateNow } from 'src/utils';
 class Citation {
 	label: string;
 	settings: GenerateMarkdownPluginSettingsType;
@@ -73,8 +78,6 @@ export class GenerateLatex {
 		this.latex = root.children.map((child: RootContent) => {
 			const result = this.wrapper(child, 0);
 
-			// console.log(result);
-
 			// // if tag, exlude it
 			if (result && result.startsWith("#"))
 				return;
@@ -87,16 +90,59 @@ export class GenerateLatex {
 		this.mergeCloseRefCitations();
 
 		this.image();
+		this.refImage();
 
-		// this.refImage();
+		this.removeMarkdownLeftovers();
 
+		this.basicRef(); 
 
-		// this.removeMarkdownLeftovers();
+		this.fixLatexUnderscores();
 
-		// this.basicRef(); 
+		const metadataNote = await this.getTemplateMetadataNote(app, `${this.settings.metadataNote}.md`);
+		const template = new PEFTemplate(metadataNote, this.latex, latexCitations).getTemplate();
 
-		console.log(this.latex);
+		new SaveModal(app, async (path: string) => {
+			
+			//@ts-ignore
+			const basePath = app.vault.adapter.basePath;
 
+			const vaultPath = basePath  + '\\' + "generated-latex-thesis";
+
+			const thesisName = path.replace('.md', '');
+
+			const thesisDir = vaultPath + '\\' + thesisName + '_' + formatDateNow(); 
+
+			fs.mkdirSync(thesisDir);
+
+			const imageDirName = this.settings.latexImagesDirectoryName;
+			const imageDirPath = thesisDir + '\\' + imageDirName;
+
+			fs.mkdirSync(imageDirPath);
+
+			const allFiles = app.vault.getAllLoadedFiles();
+
+			let images: TAbstractFile[] = [];
+			
+			this.images.forEach(img => {
+				const imageObject = allFiles.find((file: TFile) => file.name === img.name)
+				if (imageObject)
+					images.push(imageObject);
+			});
+
+			// move images
+			images.forEach((image: TAbstractFile) => {
+				
+				const oldPath = basePath + '\\' + image.path;
+				const newPath = imageDirPath + '\\' + image.name;
+
+				fs.copyFileSync(oldPath, newPath); 
+			})
+			
+			fs.writeFileSync(thesisDir + '\\' + thesisName + '.tex', template);
+			
+			new Notice(`${thesisName} and ${imageDirName} created successfully.`);
+			new Notice(`${images.length} images copied successfully.`);
+		}, false).open();
 
 	}
 
@@ -472,6 +518,15 @@ export class GenerateLatex {
 		});
 	}
 
+	fixLatexUnderscores() {
+		this.latex = this.latex.replaceAll("_", "\\_");
+	}
+
+	// insert all necessary metadata
+	addPEFMendeluTemplate() {
+
+	}
+
 	async getActiveNote(app: App, activeNote: TFile) {
 		const text = await getNoteByName(app, activeNote.path);
 
@@ -492,5 +547,16 @@ export class GenerateLatex {
 		}
 
 		return literature
+	}
+
+	async getTemplateMetadataNote(app: App, path: string) {
+		const templateNote = await getNoteByName(app, path);
+
+		if (!templateNote) {
+			new Notice('Template metadata note not found. Specify path to the file in settings.');
+			throw new Error(`Template metadata note not found. Specify path to the file in settings. Err: ${templateNote}`);
+		}
+
+		return templateNote;
 	}
 }
