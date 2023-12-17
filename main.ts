@@ -1,6 +1,5 @@
 import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
 import { GenerateMarkdown, VIEW_CONTENT_COMPOSE_NOTES } from 'src/views/generate-markdown';
-import { GenerateLatex } from 'src/views/generate-latex';
 export interface GenerateMarkdownPluginSettingsType {
 	listOfLinksKeyword: string;
 	literatureNote: string;
@@ -9,6 +8,7 @@ export interface GenerateMarkdownPluginSettingsType {
 	removeStatusTag: boolean;
 	metadataNote: string;
 	latexImagesDirectoryName: string;
+	attachmentsDir: string;
 }
 
 const DEFAULT_SETTINGS: GenerateMarkdownPluginSettingsType = {
@@ -18,7 +18,8 @@ const DEFAULT_SETTINGS: GenerateMarkdownPluginSettingsType = {
 	insertIndexNote: false,
 	removeStatusTag: true,
 	metadataNote: 'PEF Thesis Metadata',
-	latexImagesDirectoryName: 'obrazky'
+	latexImagesDirectoryName: 'obrazky',
+	attachmentsDir: 'prilohy'
 }
 
 export default class GenerateMarkdownPlugin extends Plugin {
@@ -38,13 +39,13 @@ export default class GenerateMarkdownPlugin extends Plugin {
 			this.activateGenerateMarkdownView();
 		});
 
-		this.addCommand({
-			id: "generate latex",
-			name: "generate latex from markdown",
-			callback: () => {
-				new GenerateLatex(this.app, this.settings);
-			},
-		});
+		// this.addCommand({
+		// 	id: "generate latex",
+		// 	name: "generate latex from markdown",
+		// 	callback: () => {
+		// 		new GenerateLatex(this.app, this.settings);
+		// 	},
+		// });
 	}
 
 	async activateGenerateMarkdownView() {
@@ -161,6 +162,17 @@ class GenerateMarkdownPluginSettingTab extends PluginSettingTab {
 			.setValue(this.plugin.settings.latexImagesDirectoryName)
 			.onChange(async (value) => {
 				this.plugin.settings.latexImagesDirectoryName = value;
+				await this.plugin.saveSettings();
+			}));
+
+		new Setting(containerEl)
+		.setName('Attachments')
+		.setDesc('Path to attachments folder. One note per one attachment.')
+		.addText(text => text
+			.setPlaceholder(`Defaults to "${this.plugin.settings.attachmentsDir}"`)
+			.setValue(this.plugin.settings.latexImagesDirectoryName)
+			.onChange(async (value) => {
+				this.plugin.settings.attachmentsDir = value;
 				await this.plugin.saveSettings();
 			}));
 

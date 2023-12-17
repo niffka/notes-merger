@@ -1,5 +1,4 @@
 import * as fs from 'fs';
-import * as path from 'path';
 
 import { Notice, App, TFile, TAbstractFile, } from 'obsidian';
 import { CitationType, LatexImageType, LatexErrorType } from 'src/types';
@@ -70,9 +69,10 @@ export class GenerateLatex {
 
 		const citations = this.parseLiteratureNote(literatureNote);
 
-		// TODO: insert latex citations at the end of doc
 		const latexCitations = this.createLatexCitations(citations);
 	
+		const allFiles = app.vault.getAllLoadedFiles();
+
 		const root: Root = fromMarkdown(activeNoteText);
 
 		this.latex = root.children.map((child: RootContent) => {
@@ -96,10 +96,15 @@ export class GenerateLatex {
 
 		this.basicRef(); 
 
-		this.fixLatexUnderscores();
+		this.fixLatexSpecialCharacters();
+
+		const attachments = await this.attachments(app, allFiles);
+		console.log(attachments);
 
 		const metadataNote = await this.getTemplateMetadataNote(app, `${this.settings.metadataNote}.md`);
-		const template = new PEFTemplate(metadataNote, this.latex, latexCitations).getTemplate();
+		const pefTemplate = new PEFTemplate(metadataNote, this.latex, latexCitations, attachments);
+		const template = pefTemplate.getTemplate();
+		const xdipp = pefTemplate.getXdippSty();
 
 		new SaveModal(app, async (path: string) => {
 			
@@ -107,6 +112,9 @@ export class GenerateLatex {
 			const basePath = app.vault.adapter.basePath;
 
 			const vaultPath = basePath  + '\\' + "generated-latex-thesis";
+
+			if (!fs.existsSync(vaultPath))
+				fs.mkdirSync(vaultPath);
 
 			const thesisName = path.replace('.md', '');
 
@@ -119,12 +127,10 @@ export class GenerateLatex {
 
 			fs.mkdirSync(imageDirPath);
 
-			const allFiles = app.vault.getAllLoadedFiles();
-
 			let images: TAbstractFile[] = [];
 			
 			this.images.forEach(img => {
-				const imageObject = allFiles.find((file: TFile) => file.name === img.name)
+				const imageObject = allFiles.find((file: TFile) => file.name.toLowerCase() === img.name.toLowerCase())
 				if (imageObject)
 					images.push(imageObject);
 			});
@@ -138,7 +144,8 @@ export class GenerateLatex {
 				fs.copyFileSync(oldPath, newPath); 
 			})
 			
-			fs.writeFileSync(thesisDir + '\\' + thesisName + '.tex', template);
+			fs.writeFileSync(thesisDir + '\\' + 'main.tex', template);
+			fs.writeFileSync(thesisDir + '\\' + 'xdipp.sty', xdipp);
 			
 			new Notice(`${thesisName} and ${imageDirName} created successfully.`);
 			new Notice(`${images.length} images copied successfully.`);
@@ -160,7 +167,7 @@ export class GenerateLatex {
 			const level = transformHeadings[depth];
 			heading = `\\${level}{${headingValue}}`; 
 		} else {
-			heading = `**${headingValue}**`
+			heading = `\\textbf{${headingValue}}`
 		}
 
 		return heading;
@@ -394,12 +401,6 @@ export class GenerateLatex {
 				this.latex = this.latex.replace(ref[0], `\\cite{${cleanRefs}}`)
 			})
 		})
-
-		
-
-		// links.forEach(([raw, clean]: any) => {
-		// 	this.latex = this.latex.replace(raw, `\\cite{${clean}}`);
-		// });
 	}
 
 	table(markdownTable: string) {
@@ -453,6 +454,8 @@ export class GenerateLatex {
 
 		if (metadata.source) {
 			latexTable += `\n\\tabzdroj{${metadata.source ? metadata.source : ''}}\n\\endtab`;
+		} else {
+			latexTable += '\\endtab';
 		}
 
 		return latexTable;
@@ -518,13 +521,36 @@ export class GenerateLatex {
 		});
 	}
 
-	fixLatexUnderscores() {
-		this.latex = this.latex.replaceAll("_", "\\_");
+	async attachments(app: App, allFiles: TAbstractFile[]) {
+		if (!this.settings.attachmentsDir)
+			return "";
+
+		const attachments = allFiles.filter(
+			(file: TFile) => file.path.includes(this.settings.attachmentsDir) && file?.extension === "md"
+		);
+
+		if (attachments.length <= 0)
+			return "";
+
+		let attachmentLatex = "\\prilohy\n";
+
+		for await (const att of attachments) {
+			const note = await getNoteByName(app, att.path);
+			// console.log(note);
+			attachmentLatex += `
+\\priloha{${(att as TFile).basename}}
+${note}
+`; 
+		};
+
+		return attachmentLatex;
 	}
 
-	// insert all necessary metadata
-	addPEFMendeluTemplate() {
-
+	// special characters: %, #, _
+	fixLatexSpecialCharacters() {
+		this.latex = this.latex.replaceAll("_", "\\_");
+		this.latex = this.latex.replaceAll("#", "\\#");
+		this.latex = this.latex.replaceAll("%", "\\%");
 	}
 
 	async getActiveNote(app: App, activeNote: TFile) {

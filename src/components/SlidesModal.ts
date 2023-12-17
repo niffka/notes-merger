@@ -95,7 +95,9 @@ export class SlidesModal extends Modal {
 
   render() {
 	this.linksEl.empty();
-	const depthLinks = this.flattenedLinks.filter((link: LinkTreeType) => link.level && link.level <= this.depth);
+	const depthLinks = this.flattenedLinks
+		.filter((link: LinkTreeType) => link.level && link.level <= this.depth)
+		.filter((link: LinkTreeType) => link.exists);
 
 	this.slides = depthLinks.map((link: LinkTreeType) => ({ link: link, type: 'basic' }))
 	

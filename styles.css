@@ -103,6 +103,10 @@ If your plugin does not need CSS, delete this file.
 	margin-left: 5px;
 }
 
+.generate-latex-btn {
+	margin-top: 10px;
+}
+
 .slide-row {
 	line-height: 3.5em;
 }

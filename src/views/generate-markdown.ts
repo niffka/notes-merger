@@ -3,7 +3,7 @@ import { fixSpaceInName, getNoteByName } from '../utils';
 import { LinkTreeType, BuildLinkTreeType, SlideType } from "src/types";
 import { GenerateMarkdownPluginSettingsType } from '../../main';
 import { SlidesMarkdown } from './generate-slides-markdown';
-
+import { GenerateLatex } from 'src/views/generate-latex';
 import {
 	Button, 
 	BaseLink,
@@ -22,6 +22,7 @@ export class GenerateMarkdown extends ItemView {
 
 	container: Element;
 	toolbar: Element;
+	bottombar: Element;
 	structure: Element;
 	generatePreviewParent: Element;
 	generateMarkdownParent: Element;
@@ -53,6 +54,7 @@ export class GenerateMarkdown extends ItemView {
 		container.empty();
 
 		this.toolbar = container.createEl("div");
+		this.bottombar = container.createEl("div");
 		this.generatePreviewParent = this.toolbar.createEl('span');
 		this.generateMarkdownParent = this.toolbar.createEl('span');
 		this.generateSlidesParent = this.toolbar.createEl('span');
@@ -72,6 +74,10 @@ export class GenerateMarkdown extends ItemView {
 			this.generateSlidesParent.empty();
 			this.readSelectedNote();
 		});
+
+		new Button(this.bottombar, 'Generate latex', () => {
+			new GenerateLatex(this.app, this.settings);
+		}, { cls: 'generate-latex-btn'})
 	}
 
 	parseLinks(text: string, index: boolean = false) {
@@ -199,6 +205,13 @@ export class GenerateMarkdown extends ItemView {
 		const inlineLinks = links.filter(link => link.inline);
 		this.markdown = this.insertToNearestNewLine(this.markdown, inlineLinks);
 
+		// remove inline links that start on the new line
+		// they're replaced with link's note text
+		inlineLinks.forEach((iLink: LinkTreeType) => {
+			const re = new RegExp(`^\\[\\[#?${iLink.name}\\]\\]\n`, 'gm');
+			this.markdown = this.markdown.replace(re, '');
+		});
+
 		links.forEach((link: LinkTreeType) => {
 
 			if (this.ignoredLinks.includes(link.name))
@@ -243,6 +256,9 @@ export class GenerateMarkdown extends ItemView {
 		
 		// remove status tag (#dokoncene, #rozpracovane)
 		note = note.replace(/#[\w\s]+\n/g, "");
+
+		// replace any titles in local note to bold 
+		note = note.replace(/#+\s+(.*)\n/g, "**$1**\n");
 
 		return note;
 	}
