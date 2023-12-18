@@ -89,7 +89,7 @@ class GenerateMarkdownPluginSettingTab extends PluginSettingTab {
 		
 		new Setting(containerEl)
 			.setName('List of links keyword')
-			.setDesc('Keyword to detect list of links at the end of note')
+			.setDesc('Keyword to detect list of links to be subchapters at the end of note.')
 			.addText(text => text
 				.setPlaceholder('Defaults to "Kam dál"')
 				.setValue(this.plugin.settings.listOfLinksKeyword)
@@ -100,7 +100,7 @@ class GenerateMarkdownPluginSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 		.setName('Literature note')
-		.setDesc('Name of note with citations')
+		.setDesc('Name of the note with citations.')
 		.addText(text => text
 			.setPlaceholder('Defaults to "Literature"')
 			.setValue(this.plugin.settings.literatureNote)
@@ -110,8 +110,8 @@ class GenerateMarkdownPluginSettingTab extends PluginSettingTab {
 			}));
 		
 		new Setting(containerEl)
-		.setName('PEF Mendelu template thesis metadata note')
-		.setDesc('Note should include title, acknowledgements, abstract (czech, english), keywords (czech, english), declaration')
+		.setName('Thesis template metadata note')
+		.setDesc('Name of the note that contains metadata. Note should include title, acknowledgements, abstract (czech, english), keywords (czech, english), declaration.')
 		.addText(text => text
 			.setPlaceholder(`Defaults to "${this.plugin.settings.metadataNote}"`)
 			.setValue(this.plugin.settings.metadataNote)
@@ -144,8 +144,8 @@ class GenerateMarkdownPluginSettingTab extends PluginSettingTab {
 		);
 
 		new Setting(containerEl)
-		.setName('Remove status note tag')
-		.setDesc('Always remove note status tag information from note.')
+		.setName('Remove tags')
+		.setDesc('Remove tag information from notes.')
 		.addToggle(toggle => toggle
 			.setValue(this.plugin.settings.removeStatusTag)
 			.onChange(async value => {
@@ -155,7 +155,7 @@ class GenerateMarkdownPluginSettingTab extends PluginSettingTab {
 		);
 
 		new Setting(containerEl)
-		.setName('Directory name inside generated latex folder')
+		.setName('Name of image folder inside generated latex folder')
 		.setDesc('Includes images found in markdown.')
 		.addText(text => text
 			.setPlaceholder(`Defaults to "${this.plugin.settings.latexImagesDirectoryName}"`)

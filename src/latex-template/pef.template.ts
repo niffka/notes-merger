@@ -5,7 +5,7 @@ export class PEFTemplate extends LatexTemplate {
 	template: string;
 	attributes: Record<string, string> = {};
 
-	allowedTypes = ["bachelor", "master", "dissertation"];
+	allowedTypes = ["bachelor", "master", "dissertation", "scientific"];
 
 	constructor(rawMetadata: string, latexBody: string, latexCitations: string, attachments: string) {
 		super();
@@ -52,7 +52,7 @@ ${this.keywords()}\n
 
 \\obsah
 \\listoffigures
-\\lstlistoflistings
+\\listoftables
 		
 
 ${latexBody}
@@ -86,6 +86,9 @@ ${attachments}
 
 		if (thesis === "dissertation")
 			return `\\disertacni`;
+
+		if (thesis === "scientific")
+			return `\\vedecky`;
 
 		return `\\diplomova`;
 	}
@@ -268,6 +271,7 @@ ${attachments}
 \\def\\bakalarska{\\gdef\\typprace{\\lgtxt{Bakalarska}}}
 \\def\\diplomova{\\gdef\\typprace{\\lgtxt{Diplomova}}}
 \\def\\disertacni{\\gdef\\typprace{\\lgtxt{Disertacni}}}
+\\def\\vedecky{\\gdef\\typprace{\\lgtxt{Vedecky}}}
 \\def\\skola#1{\\gdef\\@skola{#1}}
 \\def\\fakulta#1{\\gdef\\@fakulta{#1}}
 
@@ -279,7 +283,7 @@ ${attachments}
 	{\\Large \\doplsanserif \\@fakulta} \\par \\bigskip \\hrule
 	\\vbox to 165mm{\\vspace*{\\fill}
 	{\\Huge\\doplsanserif\\bfseries #1\\par}\\vskip 10mm
-	{\\large\\doplsanserif\\bfseries \\typprace{} \\lgtxt{prace}} \\par
+	{\\large\\doplsanserif\\bfseries \\typprace{} } \\par
 	\\vspace*{\\fill}}\\par
 	\\noindent {\\large \\doplsanserif
 		\\begin{tabular}{@{}l}
@@ -594,17 +598,22 @@ ${attachments}
 
 %%%%%%%%%%%%%%%%%%%%%% Jazykové řetězce
 
-\\def\\c@Diplomova{Diplomová}
-\\def\\s@Diplomova{Diplomová}
-\\def\\a@Diplomova{Diploma}
+\\def\\c@Diplomova{Diplomová práce}
+\\def\\s@Diplomova{Diplomová práca}
+\\def\\a@Diplomova{Diploma thesis}
 
-\\def\\c@Bakalarska{Bakalářská}
-\\def\\s@Bakalarska{Bakalárska}
-\\def\\a@Bakalarska{Bachelor}
+\\def\\c@Bakalarska{Bakalářská práce}
+\\def\\s@Bakalarska{Bakalárska práca}
+\\def\\a@Bakalarska{Bachelor thesis}
 
-\\def\\c@Disertacni{Disertační}
-\\def\\s@Disertacni{Dizertačná}
-\\def\\a@Disertacni{Dissertation}
+\\def\\c@Disertacni{Disertační práce}
+\\def\\s@Disertacni{Dizertačná práca}
+\\def\\a@Disertacni{Dissertation thesis}
+
+
+\\def\\c@Vedecky{Vědecký článek}
+\\def\\s@Vedecky{Vedecký článok}
+\\def\\a@Vedecky{Scientific article}
 
 \\def\\c@prace{práce}
 \\def\\s@prace{práca}

@@ -18,6 +18,8 @@ export class SlidesMarkdown {
 				this.slideshow += this.createBasicSlide(slide.link.name);
 			else if (slide.type === 'split')
 				this.slideshow += this.createSplitSlide(slide.link.name);
+			else if (slide.type === 'image')
+				this.slideshow += this.createImageSlide(slide.link.name);
 		});
 
 		if (hasLastSlide)
@@ -36,7 +38,7 @@ export class SlidesMarkdown {
 	}
 
 	createTitleSlide(title: string) {
-		return `\n<!-- slide template="[[tpl-con-title]]" -->\n\n` +
+		return `\n<!-- slide template="[[tpl-con-title-first]]" -->\n\n` +
 				`## ${title}\n` + 
 				`::: block\n` + 
 				`#### add author here\n` +
@@ -62,11 +64,28 @@ export class SlidesMarkdown {
 			`:::\n\n`;
 	}
 
+	createImageSlide(name: string) {
+		return `\n---\n` + 
+		`<!-- slide template="[[tpl-con-default-slide]]" -->\n\n` +
+
+		`::: title\n`+
+		`### **${name}**\n`+
+		`:::\n\n`+
+		
+		`:::middle\n`+
+		`![[write name of image here|number of pixels]]\n`+
+		`:::<!-- element align="center" -->\n\n` +
+		
+		`::: source\n` +
+		`###### Write description and source here.\n` +
+		`:::\n\n`;
+	}
+
 	createSplitSlide(name: string) {
 		return `\n---\n` + 
 			`<!-- slide template="[[tpl-con-2-1-box]]" -->\n\n` +
 			`::: title\n` + 
-			`### _**${name}**_\n` +
+			`### **${name}**\n` +
 			`:::\n\n` + 
 			`::: left\n` + 
 			`**text in left box**\n` + 
@@ -75,10 +94,11 @@ export class SlidesMarkdown {
 			`-\n` +
 			`:::\n\n` +
 			`::: right\n` +
-			`**text in right box**\n` + 
-			`- lorem ipsum\n` + 
-			`-\n` +  
-			`-\n` +
+			`![[write name of image here|number of pixels]]\n`+
+			`:::<!-- element align="center" -->\n\n`+
+			`::: source\n` +
+			`###### Write description and source here.\n` +
 			`:::\n\n`;
+			;
 	}
 }
