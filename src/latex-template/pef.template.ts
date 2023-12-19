@@ -128,7 +128,7 @@ ${attachments}
 
 	getXdippSty(): string {
 		return `
-%%%%%%%%%%%%%%%%%%%%%%%% xdipp.sty
+%%%%%%%%%%%%%%%%%%%%%%%% latexStyle.sty
 %
 %  Styl pro sazbu diplomovych praci pro XeLaTeX, v. 2.1
 %  Freeware.

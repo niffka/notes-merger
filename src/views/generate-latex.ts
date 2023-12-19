@@ -11,6 +11,7 @@ import { RootContent } from 'mdast';
 import { PEFTemplate } from 'src/latex-template/pef.template';
 import { SaveModal } from 'src/components';
 import { formatDateNow } from 'src/utils';
+
 class Citation {
 	label: string;
 	settings: GenerateMarkdownPluginSettingsType;
@@ -145,7 +146,7 @@ export class GenerateLatex {
 			})
 			
 			fs.writeFileSync(thesisDir + '\\' + 'main.tex', template);
-			fs.writeFileSync(thesisDir + '\\' + 'xdipp.sty', xdipp);
+			fs.writeFileSync(thesisDir + '\\' + 'latexStyle.sty', xdipp);
 			
 			new Notice(`${thesisName} and ${imageDirName} created successfully.`);
 			new Notice(`${images.length} images copied successfully.`);
