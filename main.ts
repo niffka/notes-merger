@@ -17,7 +17,7 @@ const DEFAULT_SETTINGS: GenerateMarkdownPluginSettingsType = {
 	insertPreviewContent: true,
 	insertIndexNote: false,
 	removeStatusTag: true,
-	metadataNote: 'PEF Thesis Metadata',
+	metadataNote: 'Metadata',
 	latexImagesDirectoryName: 'obrazky',
 	attachmentsDir: 'prilohy'
 }
@@ -170,7 +170,7 @@ class GenerateMarkdownPluginSettingTab extends PluginSettingTab {
 		.setDesc('Path to attachments folder. One note per one attachment.')
 		.addText(text => text
 			.setPlaceholder(`Defaults to "${this.plugin.settings.attachmentsDir}"`)
-			.setValue(this.plugin.settings.latexImagesDirectoryName)
+			.setValue(this.plugin.settings.attachmentsDir)
 			.onChange(async (value) => {
 				this.plugin.settings.attachmentsDir = value;
 				await this.plugin.saveSettings();

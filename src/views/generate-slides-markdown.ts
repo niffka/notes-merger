@@ -39,21 +39,23 @@ export class SlidesMarkdown {
 
 	createTitleSlide(title: string) {
 		return `\n<!-- slide template="[[tpl-con-title-first]]" -->\n\n` +
-				`## ${title}\n` + 
-				`::: block\n` + 
-				`#### add author here\n` +
+				`::: title\n\n` + 
+				`## _${title}_\n` +
+				`:::\n\n` +
+				`::: source\n\n` + 
+				`###### add author here\n` +
 				`:::\n\n`;
 	}
 
 	createLastSlide() {
 		return `\n---\n` +
-			`<!-- slide template="[[tpl-con-splash]]" -->\n\n` +
-			`# **Thank you for your attention**\n\n`;
+			`<!-- slide template="[[tpl-con-end]]" -->\n\n` +
+			`#### _Ďakujem za pozornosť_\n\n`;
 	}
 
 	createBasicSlide(name: string) {
 		return `\n---\n` + 
-			`<!-- slide template="[[tpl-con-default-box]]" -->\n\n` +
+			`<!-- slide template="[[tpl-con-default]]" -->\n\n` +
 			`::: title\n` +
 			`### _**${name}**_\n` +
 			`:::\n\n` +
@@ -61,15 +63,15 @@ export class SlidesMarkdown {
 			`-\n` + 
 			`-\n` +
 			`-\n` +
-			`:::\n\n`;
+			`:::<!-- element style="font-size:16px;color:black;font-weight:600;line-height:1.9" pad="20px 0" -->\n\n`;
 	}
 
 	createImageSlide(name: string) {
 		return `\n---\n` + 
-		`<!-- slide template="[[tpl-con-default-slide]]" -->\n\n` +
+		`<!-- slide template="[[tpl-con-image]]" -->\n\n` +
 
 		`::: title\n`+
-		`### **${name}**\n`+
+		`### _**${name}**_\n`+
 		`:::\n\n`+
 		
 		`:::middle\n`+
@@ -83,22 +85,22 @@ export class SlidesMarkdown {
 
 	createSplitSlide(name: string) {
 		return `\n---\n` + 
-			`<!-- slide template="[[tpl-con-2-1-box]]" -->\n\n` +
+			`<!-- slide template="[[tpl-con-split]]" -->\n\n` +
 			`::: title\n` + 
-			`### **${name}**\n` +
+			`### _**${name}**_\n` +
 			`:::\n\n` + 
 			`::: left\n` + 
-			`**text in left box**\n` + 
+			`#### **text in left box**\n` + 
 			`- lorem ipsum\n` +
 			`-\n` + 
 			`-\n` +
-			`:::\n\n` +
+			`:::<!-- element style="font-size:14px;color:black;font-weight:500;line-height:1.9" pad="20px 20px" -->\n\n` +
 			`::: right\n` +
 			`![[write name of image here|number of pixels]]\n`+
 			`:::<!-- element align="center" -->\n\n`+
 			`::: source\n` +
 			`###### Write description and source here.\n` +
 			`:::\n\n`;
-			;
+			
 	}
 }
