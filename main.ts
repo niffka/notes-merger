@@ -108,17 +108,6 @@ class GenerateMarkdownPluginSettingTab extends PluginSettingTab {
 				this.plugin.settings.literatureNote = value;
 				await this.plugin.saveSettings();
 			}));
-		
-		new Setting(containerEl)
-		.setName('Thesis template metadata note')
-		.setDesc('Name of the note that contains metadata. Note should include title, acknowledgements, abstract (czech, english), keywords (czech, english), declaration.')
-		.addText(text => text
-			.setPlaceholder(`Defaults to "${this.plugin.settings.metadataNote}"`)
-			.setValue(this.plugin.settings.metadataNote)
-			.onChange(async (value) => {
-				this.plugin.settings.metadataNote = value;
-				await this.plugin.saveSettings();
-			}));
 
 		new Setting(containerEl)
 		.setName('Include generated preview')
@@ -153,6 +142,17 @@ class GenerateMarkdownPluginSettingTab extends PluginSettingTab {
 				await this.plugin.saveSettings();
 			})
 		);
+
+		new Setting(containerEl)
+		.setName('Thesis template metadata note')
+		.setDesc('Name of the note that contains metadata. Note should include title, acknowledgements, abstract (czech, english), keywords (czech, english), declaration.')
+		.addText(text => text
+			.setPlaceholder(`Defaults to "${this.plugin.settings.metadataNote}"`)
+			.setValue(this.plugin.settings.metadataNote)
+			.onChange(async (value) => {
+				this.plugin.settings.metadataNote = value;
+				await this.plugin.saveSettings();
+			}));
 
 		new Setting(containerEl)
 		.setName('Name of image folder inside generated latex folder')

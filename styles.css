@@ -99,18 +99,98 @@ If your plugin does not need CSS, delete this file.
 	font-style: italic;
 }
 
-.generate-markdown-btn {
-	margin-left: 5px;
-}
-
-.generate-latex-btn {
-	margin-top: 10px;
-}
-
 .slide-row {
 	line-height: 3.5em;
 }
 
 .row-right {
 	float: right;
+}
+
+.row-spacy {
+	margin-bottom: 15px;
+}
+
+.bold { 
+	font-weight: bold;
+}
+
+.error-icon {
+	margin-right: 10px;
+    position: relative;
+    top: 8px;
+}
+
+h3 {
+	margin-top: 25px;
+	margin-bottom: 0px;
+}
+
+.insert-with-checkbox {
+	margin-bottom: 15px;
+}
+
+.disabled-text {
+	color: #cfcfcf7d;
+}
+
+.disabled-text * {
+	text-decoration: none;
+	color: #cfcfcf7d;
+}
+
+.toolbar {
+	width: 100%;
+	display: flex;
+}
+
+.subbar {
+	width: 100%;
+	display: flex;
+	margin-top: 15px;
+}
+
+.generate-markdown-tab-btn {
+	width: 50%;
+}
+
+.generate-markdown-tab-btn button {
+	width: 95%}
+
+.generate-latex-tab-btn {
+	width: 50%;
+}
+
+.generate-latex-tab-btn button{
+	width: 95%;
+	float: right;
+}
+
+.generate-markdown-btn {
+	width: 33%;
+	margin-right: 15px;
+}
+
+.generate-slides-btn {
+	width: 33%;
+}
+
+.generate-plain-latex-btn {
+	width: 33%;
+	margin-right: 15px;
+}
+
+.generate-template-latex-btn {
+	width: 33%;
+}
+
+.generate-final-btn {
+	background-color: #8a5cf5 !important;
+	color: #dadada;
+	margin-top: 25px;
+	margin-bottom: 25px;
+	width: 50%;
+	display: block;
+    margin-left: auto;
+    margin-right: auto;
 }

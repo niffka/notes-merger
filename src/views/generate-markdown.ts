@@ -1,6 +1,6 @@
-import { ItemView, WorkspaceLeaf, Notice, TAbstractFile, TFile } from "obsidian";
+import { ItemView, WorkspaceLeaf, Notice, TAbstractFile, TFile, ButtonComponent, TextComponent, ValueComponent, TextAreaComponent } from "obsidian";
 import { fixSpaceInName, getNoteByName } from '../utils';
-import { LinkTreeType, BuildLinkTreeType, SlideType } from "src/types";
+import { LinkTreeType, BuildLinkTreeType, SlideType, CitationType, LatexImageType } from "src/types";
 import { GenerateMarkdownPluginSettingsType } from '../../main';
 import { SlidesMarkdown } from './generate-slides-markdown';
 import { GenerateLatex } from 'src/views/generate-latex';
@@ -9,7 +9,9 @@ import {
 	BaseLink,
 	SaveModal, 
 	TreeMenu,
-	SlidesModal
+	SlidesModal,
+	Checkbox,
+	ErrorIcon,
 } from '../components/index';
 
 
@@ -22,11 +24,15 @@ export class GenerateMarkdown extends ItemView {
 
 	container: Element;
 	toolbar: Element;
-	bottombar: Element;
+	subbar: Element;
 	structure: Element;
-	generatePreviewParent: Element;
+	generateMarkdownTabParent: Element;
+	generateLatexTabParent: Element;
+	
 	generateMarkdownParent: Element;
+	generatePreviewParent: Element;
 	generateSlidesParent: Element;
+	generateLatexParent: Element;
 
 	linksTree: LinkTreeType[] = [];
 	loadedFiles: TAbstractFile[] = [];
@@ -37,6 +43,7 @@ export class GenerateMarkdown extends ItemView {
 	markdown: string = "";
 	ignoredLinks: string[] = [];
 	images: string[] = [];
+	generateLatex: GenerateLatex;
 
 	previewContent: string = '';
 
@@ -53,14 +60,15 @@ export class GenerateMarkdown extends ItemView {
 		this.container = container;
 		container.empty();
 
-		this.toolbar = container.createEl("div");
-		this.bottombar = container.createEl("div");
-		this.generatePreviewParent = this.toolbar.createEl('span');
-		this.generateMarkdownParent = this.toolbar.createEl('span');
-		this.generateSlidesParent = this.toolbar.createEl('span');
-		this.structure = this.container.createEl("div");
+		this.toolbar = container.createEl('div', { cls: 'toolbar'});
+		this.generateMarkdownTabParent = this.toolbar.createEl('div', { cls: 'generate-markdown-tab-btn' });
+		this.generateLatexTabParent = this.toolbar.createEl('div', { cls: 'generate-latex-tab-btn' });
 
-		new Button(this.generatePreviewParent, 'Generate preview', () => {
+		this.subbar = container.createEl('div', { cls: 'subbar' });
+
+		this.structure = this.container.createEl('div');
+
+		new Button(this.generateMarkdownTabParent, 'Generate preview', () => {
 			// empty state
 			this.linksTree = [];
 			this.maxLevel = 0;
@@ -70,14 +78,36 @@ export class GenerateMarkdown extends ItemView {
 			this.markdown = "";
 			
 			this.structure.empty();
-			this.generateMarkdownParent.empty();
-			this.generateSlidesParent.empty();
+			this.subbar.empty();
+
 			this.readSelectedNote();
 		});
 
-		new Button(this.bottombar, 'Generate latex', () => {
-			new GenerateLatex(this.app, this.settings);
-		}, { cls: 'generate-latex-btn'})
+		new Button(this.generateLatexTabParent, 'Generate latex', async () => {
+			// const generateLatex = new GenerateLatex(this.app, this.settings);
+
+			// this.structure.empty();	
+			this.subbar.empty();
+
+			// this.renderLatexStatusPreview(generateLatex);
+			new Button(this.subbar, 'Generate Plain Latex', () => {
+				this.structure.empty();
+
+				const generateLatex = new GenerateLatex(this.app, this.settings);
+				
+				this.renderLatexStatus(generateLatex);
+
+				// generateLatex.generate(this.insertThesisParts);
+			}, { cls: 'generate-plain-latex-btn'});
+	
+			new Button(this.subbar, 'Generate Latex With Template', () => {
+				this.structure.empty();
+
+				const generateLatex = new GenerateLatex(this.app, this.settings);
+	
+				this.renderLatexWithTemplateStatus(generateLatex);
+			}, { cls: 'generate-template-latex-btn'})
+		});
 	}
 
 	parseLinks(text: string, index: boolean = false) {
@@ -150,15 +180,15 @@ export class GenerateMarkdown extends ItemView {
 			this.ignoredLinks = ignoredLinks;
 		});
 
-		new Button(this.generateMarkdownParent, 'Generate markdown', () => {
+		new Button(this.subbar, 'Generate markdown', () => {
 			
 			// cleanup
 			this.markdown = "";
 
 			this.generateMarkdownFile(this.linksTree, activeNoteText);
-		}, { cls: 'generate-markdown-btn' });
+		}, { cls: 'generate-markdown-btn'});
 
-		new Button(this.generateSlidesParent, 'Generate slideshow', () => {
+		new Button(this.subbar, 'Generate slideshow', () => {
 			new SlidesModal(this.app, this.linksTree, this.ignoredLinks, (slides: SlideType[], hasTitleSlide: boolean, hasLastSlide: boolean) => {
 				const slidesMD = new SlidesMarkdown(slides, title, hasTitleSlide, hasLastSlide);
 
@@ -169,8 +199,174 @@ export class GenerateMarkdown extends ItemView {
 
 				}).open();
 			}).open();
-		}, { cls: 'generate-markdown-btn' })
+		}, { cls: 'generate-slides-btn'})
 	}
+
+	async renderLatexStatus(generateLatex: GenerateLatex) {
+		
+		this.structure.empty();	
+		
+		new BaseLink(this.app, this.structure, generateLatex.activeNote.basename);
+		const { images } = await generateLatex.loadRequirements();
+
+		this.imageLatexStatus(images);
+
+		new Button(this.structure, 'Generate', () => {
+			generateLatex.generate();
+		}, { cls: 'generate-final-btn'});
+	}
+
+	async renderLatexWithTemplateStatus(generateLatex: GenerateLatex) {
+		let insertThesisParts: Record<string, boolean> = {
+			metadata: true,
+			literature: true,
+			attachments: true
+		};
+
+		const insertWithCheckbox = (structure: Element, type: string, onClick: (state: boolean) => void) => {
+
+			const settingPaths: Record<string, string> = {
+				attachment: this.settings.attachmentsDir,
+				literature: this.settings.literatureNote,
+				metadata: this.settings.metadataNote
+			};
+
+			let state: boolean = true;
+			const insertAttEl = structure.createEl('div', { cls: 'insert-with-checkbox' });
+			insertAttEl.createEl('span', {
+				text: `Insert ${type} (${settingPaths[type]}.md)`
+			});
+			new Checkbox(insertAttEl, state, true, () => {
+				state = !state;
+				onClick(state);
+				insertThesisParts[type] = state;
+			})
+		}
+	
+		const applyStateClass = (element: Element, state: boolean, className: string = "disabled-text") => {
+			if (state)
+				element.addClass(className);
+			else
+				element.removeClass(className);
+		}
+
+		new BaseLink(this.app, this.structure, generateLatex.activeNote.basename);
+			
+		const { 
+			metadata,
+			attachments,
+			literature,
+			images
+		} = await generateLatex.loadRequirements();
+
+		this.structure.createEl('h3', { 
+			text: 'Metadata' + (metadata ? ` (${Object.keys(metadata).length})` : '')
+		});
+		if (metadata) {
+			let table: Element;
+			insertWithCheckbox(this.structure, 'metadata', (state) => {
+				applyStateClass(table, !state);
+			});
+			table = this.structure.createEl('table');
+			Object.keys(metadata).forEach((key: string) => {
+				const tr = table.createEl('tr');
+				tr.createEl('th', { text: key }).setAttr("align", "left");
+				tr.createEl('td', { text: metadata[key] || "–⁠⁠⁠⁠⁠⁠⁠⁠⁠" }).setAttr("align", metadata[key] ? "left" : "center");
+			});
+		} else {
+			this.structure.createEl('div', { text: 'Metadata not loaded.'});
+		}
+
+		this.imageLatexStatus(images);
+
+		this.structure.createEl('h3', { 
+			text: 'Literature' + (!!literature.length ? ` (${literature?.length})` : '')
+		});
+		if (literature.length) {
+			let contentEl: Element;
+			insertWithCheckbox(this.structure, 'literature', (state) => {
+				applyStateClass(contentEl, !state);
+			});
+			contentEl = this.structure.createEl('div')
+			literature.forEach((lit: CitationType) => {
+				const litEl = contentEl.createEl('div', { cls: 'row-spacy'});
+				litEl.createEl('a', { text: lit.label, cls: 'bold' });
+				litEl.onclick = () => {
+					const literatureLinkPath = `${this.settings.literatureNote}#${lit.label}`;
+					this.app.workspace.openLinkText(literatureLinkPath, "")
+				}
+				litEl.createEl('div', { text: lit.title });
+			});
+		} else {
+			this.structure.createEl('div', { text: 'Literature not loaded.'});
+		}
+
+		this.structure.createEl('h3', {
+			text: 'Attachments' + (attachments ? ` (${attachments?.attachments.length})` : '')
+		});
+		if (attachments) {
+			let contentEl: Element;
+			insertWithCheckbox(this.structure, 'attachment', (state) => {
+				applyStateClass(contentEl, !state);
+			});
+			const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+			contentEl = this.structure.createEl('div');
+			attachments.attachments.forEach((attachment: TFile, key: number) => {
+				const attEl = contentEl.createEl('div', { cls: 'row-spacy'});
+				attEl.createEl('div', { text: `Attachment ${alphabet[key] || '-'}`, cls: 'bold'});
+				attEl.createEl('a', { text: attachment.basename, cls: 'bold' });
+				attEl.onclick = () => {
+					this.app.workspace.openLinkText(attachment.path, "")
+				}
+				attEl.createEl('span', { text: ` - ${attachment.path}`});
+			});
+		} else {
+			this.structure.createEl('div', { text: 'Attachments not loaded.'})
+		}
+
+		new Button(this.structure, 'Generate', () => {
+			generateLatex.generate(insertThesisParts);
+		}, { cls: 'generate-final-btn'});
+	}
+
+	imageLatexStatus({ 
+		correct,
+		incorrect,
+		count
+	}: {
+		correct: LatexImageType[],
+		incorrect: LatexImageType[],
+		count: number
+	}) {
+		this.structure.createEl('h3', { 
+			text: 'Images' + (!!count ? ` (${count})` : '')
+		});
+		if (!!count) {
+			correct.forEach((image: LatexImageType) => {
+				const imgEl = this.structure.createEl('div', { cls: 'row-spacy'});
+				imgEl.createEl('a', { text: image.name, cls: 'bold' });
+				imgEl.onclick = () => {
+					this.app.workspace.openLinkText(image.path, "")
+				}
+				imgEl.createEl('div', { text: image.desc });
+			});
+
+			if (incorrect.length > 0) {
+				this.structure.createEl('strong', { text: 'Incorrect images (bad format)'})
+				incorrect.forEach((image: LatexImageType) => {
+					const imgEl = this.structure.createEl('div', { cls: 'row-spacy'});
+					imgEl.createEl('i', { cls: 'error-icon'}).appendChild(new ErrorIcon().element);
+					imgEl.createEl('a', { text: image.name, cls: 'bold' });
+					imgEl.onclick = () => {
+						this.app.workspace.openLinkText(image.path, "")
+					}
+				});
+			}
+		} else {
+			this.structure.createEl('div', { text: 'No images found.'});
+		}
+	}
+	
 
 	async generateMarkdownFile(links: LinkTreeType[], mainNote: string) {
 

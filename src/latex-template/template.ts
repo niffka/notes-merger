@@ -14,5 +14,5 @@ export abstract class LatexTemplate {
 
 	abstract thesisType() :string;
 
-	abstract getTemplate(): string;
+	abstract getThesis(): string;
 }

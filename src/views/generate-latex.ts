@@ -2,15 +2,16 @@ import * as fs from 'fs';
 
 import { Notice, App, TFile, TAbstractFile, } from 'obsidian';
 import { CitationType, LatexImageType, LatexErrorType } from 'src/types';
-import { fromMarkdown} from 'mdast-util-from-markdown'
+import { fromMarkdown } from 'mdast-util-from-markdown'
 import { Root, Code, Heading, Text, InlineCode, Parent } from 'mdast-util-from-markdown/lib'
 import { GenerateMarkdownPluginSettingsType } from 'main';
 
 import { getNoteByName } from "src/utils";
 import { RootContent } from 'mdast';
-import { PEFTemplate } from 'src/latex-template/pef.template';
+// import { PEFTemplate } from 'src/latex-template/pef.template';
 import { SaveModal } from 'src/components';
 import { formatDateNow } from 'src/utils';
+import { PEFTemplate } from 'src/latex-template/pef.template';
 
 class Citation {
 	label: string;
@@ -40,11 +41,22 @@ class Citation {
 
 export class GenerateLatex { 
 	
+	app: App;
 	settings: GenerateMarkdownPluginSettingsType;
 	literatureNote: string;
+	literature: CitationType[] = [];
 	citations: CitationType[] = [];
 	images: LatexImageType[] = [];
 	errors: LatexErrorType[] = [];
+	activeNote: TFile;
+	activeNoteText: string;
+	metadata: Record<string, string | null> | null
+	attachments: {
+		attachments: TAbstractFile[];
+		latex: string;
+	} | null; 
+	allFiles: TAbstractFile[]
+	template: PEFTemplate;
 
 	imageRefRegex = new RegExp(/\[(.*(.jpg|.gif|.png|.bmp|.webp))\]/g);
 
@@ -52,6 +64,7 @@ export class GenerateLatex {
 
 	constructor(app: App, settings: GenerateMarkdownPluginSettingsType) {
 		this.settings = settings;
+		this.app = app;
 
 		const activeNote = app.workspace.getActiveFile();
 
@@ -59,27 +72,62 @@ export class GenerateLatex {
 			new Notice(`Selected note is invalid.`);
 			throw new Error("Selected note is invalid.");
 		}
-		this.commands(activeNote);
+
+		this.activeNote = activeNote;
+	}
+
+	async loadRequirements() {
+		this.activeNoteText = await this.getActiveNote(this.app, this.activeNote);
+
+		this.literatureNote = await this.getLiteratureNote(this.app, this.settings.literatureNote);
+		this.literature = this.parseLiteratureNote(this.literatureNote);
+
+		this.allFiles = app.vault.getAllLoadedFiles();
+		
+		this.attachments = await this.getAttachments(this.app, this.allFiles);
+
+		const metadataNote = await this.getTemplateMetadataNote(this.app, `${this.settings.metadataNote}.md`);
+
+		this.template = new PEFTemplate(metadataNote);
+
+		this.metadata = this.template.getMetadata();
+
+		const images = this.getImages(this.activeNoteText, this.allFiles);
+
+		return {
+			metadata: this.metadata,
+			attachments: this.attachments,
+			literature: this.literature,
+			images,
+		}
 	}
 	
-	async commands(activeNote: TFile) {
+	generate(thesisParts?: Record<string, boolean>) {
+		this.translateMarkdown();
 		
-		const activeNoteText = await this.getActiveNote(app, activeNote);
-		
-		const literatureNote = await this.getLiteratureNote(app, this.settings.literatureNote);
+		if (!thesisParts) {
+			// plain thesis
+			
+			this.generateLatexFiles(this.latex);
 
-		const citations = this.parseLiteratureNote(literatureNote);
+		} else {
+			// with template
+			const latexCitations = this.createLatexCitations(this.literature);
 
-		const latexCitations = this.createLatexCitations(citations);
-	
-		const allFiles = app.vault.getAllLoadedFiles();
+			const thesis = this.template.composeThesis(thesisParts, this.latex, latexCitations, this.attachments);
 
-		const root: Root = fromMarkdown(activeNoteText);
+			this.generateLatexFiles(thesis, false);
+		}
+
+	}
+
+	translateMarkdown() {
+		const root: Root = fromMarkdown(this.activeNoteText);
 
 		this.latex = root.children.map((child: RootContent) => {
 			const result = this.wrapper(child, 0);
 
-			// // if tag, exlude it
+			// if tag, exlude it
 			if (result && result.startsWith("#"))
 				return;
 			
@@ -92,23 +140,16 @@ export class GenerateLatex {
 
 		this.image();
 		this.refImage();
-
 		this.removeMarkdownLeftovers();
-
 		this.basicRef(); 
-
 		this.fixLatexSpecialCharacters();
+		
+	}
 
-		const attachments = await this.attachments(app, allFiles);
-		console.log(attachments);
-
-		const metadataNote = await this.getTemplateMetadataNote(app, `${this.settings.metadataNote}.md`);
-		const pefTemplate = new PEFTemplate(metadataNote, this.latex, latexCitations, attachments);
-		const template = pefTemplate.getTemplate();
-		const xdipp = pefTemplate.getXdippSty();
+	generateLatexFiles(thesis: string, isPlain: boolean = true) {
+		const xdippTemplate = this.template.getXdippSty();
 
 		new SaveModal(app, async (path: string) => {
-			
 			//@ts-ignore
 			const basePath = app.vault.adapter.basePath;
 
@@ -131,7 +172,7 @@ export class GenerateLatex {
 			let images: TAbstractFile[] = [];
 			
 			this.images.forEach(img => {
-				const imageObject = allFiles.find((file: TFile) => file.name.toLowerCase() === img.name.toLowerCase())
+				const imageObject = this.allFiles.find((file: TFile) => file.name.toLowerCase() === img.name.toLowerCase())
 				if (imageObject)
 					images.push(imageObject);
 			});
@@ -145,14 +186,107 @@ export class GenerateLatex {
 				fs.copyFileSync(oldPath, newPath); 
 			})
 			
-			fs.writeFileSync(thesisDir + '\\' + 'main.tex', template);
-			fs.writeFileSync(thesisDir + '\\' + 'latexStyle.sty', xdipp);
+			fs.writeFileSync(thesisDir + '\\' + 'main.tex', thesis);
+			if (!isPlain)
+				fs.writeFileSync(thesisDir + '\\' + 'latexStyle.sty', xdippTemplate);
+
 			
 			new Notice(`${thesisName} and ${imageDirName} created successfully.`);
 			new Notice(`${images.length} images copied successfully.`);
 		}, false).open();
 
 	}
+	
+	// async commands(activeNote: TFile) {
+		
+		// const activeNoteText = await this.getActiveNote(app, activeNote);
+		
+		// const literatureNote = await this.getLiteratureNote(app, this.settings.literatureNote);
+
+		// const citations = this.parseLiteratureNote(literatureNote);
+
+		// const latexCitations = this.createLatexCitations(citations);
+	
+		// const allFiles = app.vault.getAllLoadedFiles();
+
+		// const root: Root = fromMarkdown(activeNoteText);
+
+		// this.latex = root.children.map((child: RootContent) => {
+		// 	const result = this.wrapper(child, 0);
+
+		// 	// // if tag, exlude it
+		// 	if (result && result.startsWith("#"))
+		// 		return;
+			
+		// 	return result;
+
+		// }).join("\n\n");
+
+	// 	this.refCite();
+	// 	this.mergeCloseRefCitations();
+
+	// 	this.image();
+	// 	this.refImage();
+
+	// 	this.removeMarkdownLeftovers();
+
+	// 	this.basicRef(); 
+
+	// 	this.fixLatexSpecialCharacters();
+
+	// 	// const attachments = await this.getAttachments(app, allFiles);
+
+	// 	const metadataNote = await this.getTemplateMetadataNote(app, `${this.settings.metadataNote}.md`);
+	// 	const pefTemplate = new PEFTemplate(metadataNote, this.latex, latexCitations, attachments);
+	// 	const template = pefTemplate.getTemplate();
+	// 	const xdipp = pefTemplate.getXdippSty();
+
+	// 	new SaveModal(app, async (path: string) => {
+			
+	// 		//@ts-ignore
+	// 		const basePath = app.vault.adapter.basePath;
+
+	// 		const vaultPath = basePath  + '\\' + "generated-latex-thesis";
+
+	// 		if (!fs.existsSync(vaultPath))
+	// 			fs.mkdirSync(vaultPath);
+
+	// 		const thesisName = path.replace('.md', '');
+
+	// 		const thesisDir = vaultPath + '\\' + thesisName + '_' + formatDateNow(); 
+
+	// 		fs.mkdirSync(thesisDir);
+
+	// 		const imageDirName = this.settings.latexImagesDirectoryName;
+	// 		const imageDirPath = thesisDir + '\\' + imageDirName;
+
+	// 		fs.mkdirSync(imageDirPath);
+
+	// 		let images: TAbstractFile[] = [];
+			
+	// 		this.images.forEach(img => {
+	// 			const imageObject = allFiles.find((file: TFile) => file.name.toLowerCase() === img.name.toLowerCase())
+	// 			if (imageObject)
+	// 				images.push(imageObject);
+	// 		});
+
+	// 		// move images
+	// 		images.forEach((image: TAbstractFile) => {
+				
+	// 			const oldPath = basePath + '\\' + image.path;
+	// 			const newPath = imageDirPath + '\\' + image.name;
+
+	// 			fs.copyFileSync(oldPath, newPath); 
+	// 		})
+			
+	// 		fs.writeFileSync(thesisDir + '\\' + 'main.tex', template);
+	// 		fs.writeFileSync(thesisDir + '\\' + 'xdipp.sty', xdipp);
+			
+	// 		new Notice(`${thesisName} and ${imageDirName} created successfully.`);
+	// 		new Notice(`${images.length} images copied successfully.`);
+	// 	}, false).open();
+
+	// }
 
 	heading(ast: Heading) {
 		const { depth, children } = ast;
@@ -209,7 +343,14 @@ export class GenerateLatex {
 				"\n\\end{itemize}\n");	
 			}
 		}
-		
+
+		if (ast.type == 'image') {
+			return `\\obrazek\nvlozobrbox{${ast.url}}{1.0\\textwidth}{!}\n\\endobrl{${ast.alt}}\n{${ast.url}}`
+			// const replaceWith = `\\obrazek\nvlozobrbox{${name}}{1.0\\textwidth}{!}\n\\endobrl{${desc}}\n{${name}}`;
+			// 	// @ts-ignore
+			// 	this.latex = this.latex.replaceAll(raw, replaceWith);
+		} 
+
 		return (ast as Parent).children.map((child) => {
 
 			if (ast.type == "paragraph") {
@@ -349,22 +490,16 @@ export class GenerateLatex {
 	}
 
 	image() {
-		const possibleImages = [...this.latex.matchAll(/\!\[(.*)\]\[(.*)\]/g)];
-		possibleImages.forEach(([raw, desc, name]) => {
-			this.images.push({
-				raw,
-				desc,
-				name
-			});
-			
 			// overwriting ![very cool description][image_1.png] with: 
 			// \obrazek
 			// \vlozobrbox{image_1.png}{1.0\textwidth}{!}
 			// \endobrl{very cool description}{image_1.png}
-			const replaceWith = `\\obrazek\nvlozobrbox{${name}}{1.0\\textwidth}{!}\n\\endobrl{${desc}}\n{${name}}`;
-			// @ts-ignore
-			this.latex = this.latex.replaceAll(raw, replaceWith);
-		})
+		// console.log(this.images);
+		// this.images.forEach(([raw, desc, name]) => {
+		// 	const replaceWith = `\\obrazek\nvlozobrbox{${name}}{1.0\\textwidth}{!}\n\\endobrl{${desc}}\n{${name}}`;
+		// 	// @ts-ignore
+		// 	this.latex = this.latex.replaceAll(raw, replaceWith);
+		// })
 	}
 
 	refImage() {
@@ -522,29 +657,58 @@ export class GenerateLatex {
 		});
 	}
 
-	async attachments(app: App, allFiles: TAbstractFile[]) {
+	// find all images in active note
+	// also get all possible/wrong images
+	getImages(note: string, allFiles: TAbstractFile[]) {
+		const images = [
+			...note.matchAll(/\!\[(.*)\]\[(.*)\]/g),
+			...note.matchAll(/\!\[(.*)\]\((.*)\)/g)
+		];		
+		const incorrectImages = [...note.matchAll(/\!\[\[(.*)\]\]/g)];
+		const correct = images.map(([raw, desc, name]) => ({ 
+			raw,
+			desc,
+			name,
+			path: allFiles.find((file: TFile) => file.name.toLowerCase() === name.toLowerCase())?.path ?? name
+		}));
+		const incorrect = incorrectImages.map(([raw, name]) => ({
+			raw,
+			name,
+			path: allFiles.find((file: TFile) => file.name.toLowerCase() === name.toLowerCase())?.path ?? name
+		}));
+
+		return {
+			count: correct.length + incorrect.length,
+			correct,
+			incorrect,
+		}
+	}
+
+	async getAttachments(app: App, allFiles: TAbstractFile[]) {
 		if (!this.settings.attachmentsDir)
-			return "";
+			return null;
 
 		const attachments = allFiles.filter(
 			(file: TFile) => file.path.includes(this.settings.attachmentsDir) && file?.extension === "md"
 		);
 
 		if (attachments.length <= 0)
-			return "";
+			return null;
 
 		let attachmentLatex = "\\prilohy\n";
 
 		for await (const att of attachments) {
 			const note = await getNoteByName(app, att.path);
-			// console.log(note);
-			attachmentLatex += `
-\\priloha{${(att as TFile).basename}}
-${note}
-`; 
+			attachmentLatex += (
+				`\n\\priloha{${(att as TFile).basename}}\n` +
+				`${note}\n`
+			);
 		};
 
-		return attachmentLatex;
+		return { 
+			attachments,
+			latex: attachmentLatex 
+		};
 	}
 
 	// special characters: %, #, _
@@ -564,26 +728,13 @@ ${note}
 		return text;
 	}
 
-
 	async getLiteratureNote(app: App, path: string) {
 		const literature = await getNoteByName(app, `${path}.md`);
-
-		if (!literature) {
-			new Notice('Literature note not found. Create new file or point to existing literature note in settings.');
-			throw new Error(`Literature note not found. ${literature}`);
-		}
-
 		return literature
 	}
 
 	async getTemplateMetadataNote(app: App, path: string) {
 		const templateNote = await getNoteByName(app, path);
-
-		if (!templateNote) {
-			new Notice('Template metadata note not found. Specify path to the file in settings.');
-			throw new Error(`Template metadata note not found. Specify path to the file in settings. Err: ${templateNote}`);
-		}
-
 		return templateNote;
 	}
 }

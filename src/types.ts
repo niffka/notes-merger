@@ -37,8 +37,9 @@ export interface CitationType {
 
 export interface LatexImageType {
 	raw: string;
-	desc: string;
+	desc?: string;
 	name: string;
+	path: string;
 }
 
 export interface LatexErrorType {
