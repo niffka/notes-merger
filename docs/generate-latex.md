@@ -1,4 +1,2 @@
 ### Images
-- allowed image formats: 
-	- `![image description][image.png]`
-	- `![image description](image.png)`
+- image must be in format: `![image description](image.png)`

@@ -1,3 +1,5 @@
+import { TAbstractFile } from "obsidian";
+
 export interface LinkTreeType {
 	name: string;
 	parent?: string | undefined;
@@ -46,4 +48,16 @@ export interface LatexErrorType {
 	type: string;
 	item: string[];
 	message: string;
+}
+
+export interface LatexImagesStatus{
+	correct: LatexImageType[];
+	incorrect: LatexImageType[];
+	count: number;
+}
+
+export interface AttachmentsType {
+	attachments: TAbstractFile[];
+	latex: string;
+	images: LatexImagesStatus;
 }

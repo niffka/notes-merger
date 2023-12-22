@@ -1,60 +1,29 @@
 import * as fs from 'fs';
-
 import { Notice, App, TFile, TAbstractFile, } from 'obsidian';
-import { CitationType, LatexImageType, LatexErrorType } from 'src/types';
+import { CitationType, LatexErrorType, AttachmentsType, LatexImagesStatus } from 'src/types';
 import { fromMarkdown } from 'mdast-util-from-markdown'
-import { Root, Code, Heading, Text, InlineCode, Parent } from 'mdast-util-from-markdown/lib'
+import { Root, Code, Heading, Text, InlineCode, Parent, Image } from 'mdast-util-from-markdown/lib'
 import { GenerateMarkdownPluginSettingsType } from 'main';
-
 import { getNoteByName } from "src/utils";
 import { RootContent } from 'mdast';
-// import { PEFTemplate } from 'src/latex-template/pef.template';
 import { SaveModal } from 'src/components';
 import { formatDateNow } from 'src/utils';
 import { PEFTemplate } from 'src/latex-template/pef.template';
+import { Citation } from 'src/views/citation';
 
-class Citation {
-	label: string;
-	settings: GenerateMarkdownPluginSettingsType;
-
-	constructor(label: string, settings: GenerateMarkdownPluginSettingsType) {
-		this.label = label;
-		this.settings = settings;
-	}
-			
-	parseRow(mark: string, rows: string[], value: string, optional = false) {
-		const row = (rows.shift() as string).replace(value, "").trim();
-
-		// required param is missing
-		if (!optional && row.length <= 0) {
-			new Notice(`${this.settings.literatureNote}:\nError compiling literature citations. \nRequired citation param "${mark}" is missing in "${this.label}"`);
-			throw new Error(`${this.settings.literatureNote}:\nError compiling literature citations. \nRequired citation param "${mark}" is missing in "${this.label}"`);
-		}
-
-		// skip optional row
-		if (row === "-")
-			return ""; 
-
-		return row;
-	}
-}
 
 export class GenerateLatex { 
-	
 	app: App;
 	settings: GenerateMarkdownPluginSettingsType;
 	literatureNote: string;
 	literature: CitationType[] = [];
 	citations: CitationType[] = [];
-	images: LatexImageType[] = [];
+	images: Image[] = [];
 	errors: LatexErrorType[] = [];
 	activeNote: TFile;
 	activeNoteText: string;
 	metadata: Record<string, string | null> | null
-	attachments: {
-		attachments: TAbstractFile[];
-		latex: string;
-	} | null; 
+	attachments: AttachmentsType | null; 
 	allFiles: TAbstractFile[]
 	template: PEFTemplate;
 
@@ -92,7 +61,17 @@ export class GenerateLatex {
 
 		this.metadata = this.template.getMetadata();
 
-		const images = this.getImages(this.activeNoteText, this.allFiles);
+		let images: LatexImagesStatus = this.getImages(this.activeNoteText, this.allFiles);
+		
+		if (this.attachments?.images) {
+			const { correct, incorrect, count } = this.attachments.images; 
+			images = {
+				...images, 
+				correct: [...images.correct, ...correct],
+				incorrect: [...images.incorrect, ...incorrect],
+				count: images.count + count
+			}
+		}
 
 		return {
 			metadata: this.metadata,
@@ -102,29 +81,34 @@ export class GenerateLatex {
 		}
 	}
 	
-	generate(thesisParts?: Record<string, boolean>) {
-		this.translateMarkdown();
-		
+	generate(images: LatexImagesStatus, thesisParts?: Record<string, boolean>) {
+		const latex = this.translateMarkdown(this.activeNoteText);
+
+		if (images.incorrect.length > 0) {
+			new Notice(`Fix images format before generating Latex.`);
+			throw new Error("Fix images format before generating Latex.");
+		} 
+
 		if (!thesisParts) {
 			// plain thesis
 			
-			this.generateLatexFiles(this.latex);
-
+			this.generateLatexFiles(latex);
 		} else {
+
 			// with template
 			const latexCitations = this.createLatexCitations(this.literature);
 
-			const thesis = this.template.composeThesis(thesisParts, this.latex, latexCitations, this.attachments);
+			const thesis = this.template.composeThesis(thesisParts, latex, latexCitations, this.attachments);
 
 			this.generateLatexFiles(thesis, false);
 		}
 
 	}
 
-	translateMarkdown() {
-		const root: Root = fromMarkdown(this.activeNoteText);
+	translateMarkdown(note: string) {
+		const root: Root = fromMarkdown(note);
 
-		this.latex = root.children.map((child: RootContent) => {
+		let latex = root.children.map((child: RootContent) => {
 			const result = this.wrapper(child, 0);
 
 			// if tag, exlude it
@@ -135,19 +119,19 @@ export class GenerateLatex {
 
 		}).join("\n\n");
 
-		this.refCite();
-		this.mergeCloseRefCitations();
+		latex = this.refCite(latex);
+		latex = this.mergeCloseRefCitations(latex);
 
-		this.image();
-		this.refImage();
-		this.removeMarkdownLeftovers();
-		this.basicRef(); 
-		this.fixLatexSpecialCharacters();
+		latex = this.refImage(latex);
+		latex = this.removeMarkdownLeftovers(latex);
+		latex = this.basicRef(latex); 
+		latex = this.fixLatexSpecialCharacters(latex);
 		
+		return latex;
 	}
 
 	generateLatexFiles(thesis: string, isPlain: boolean = true) {
-		const xdippTemplate = this.template.getXdippSty();
+		const latexTemplate = this.template.getLatexStyle();
 
 		new SaveModal(app, async (path: string) => {
 			//@ts-ignore
@@ -170,9 +154,9 @@ export class GenerateLatex {
 			fs.mkdirSync(imageDirPath);
 
 			let images: TAbstractFile[] = [];
-			
+
 			this.images.forEach(img => {
-				const imageObject = this.allFiles.find((file: TFile) => file.name.toLowerCase() === img.name.toLowerCase())
+				const imageObject = this.allFiles.find((file: TFile) => file.name.toLowerCase() === img.url.toLowerCase())
 				if (imageObject)
 					images.push(imageObject);
 			});
@@ -188,7 +172,7 @@ export class GenerateLatex {
 			
 			fs.writeFileSync(thesisDir + '\\' + 'main.tex', thesis);
 			if (!isPlain)
-				fs.writeFileSync(thesisDir + '\\' + 'latexStyle.sty', xdippTemplate);
+				fs.writeFileSync(thesisDir + '\\' + 'latexStyle.sty', latexTemplate);
 
 			
 			new Notice(`${thesisName} and ${imageDirName} created successfully.`);
@@ -196,97 +180,6 @@ export class GenerateLatex {
 		}, false).open();
 
 	}
-	
-	// async commands(activeNote: TFile) {
-		
-		// const activeNoteText = await this.getActiveNote(app, activeNote);
-		
-		// const literatureNote = await this.getLiteratureNote(app, this.settings.literatureNote);
-
-		// const citations = this.parseLiteratureNote(literatureNote);
-
-		// const latexCitations = this.createLatexCitations(citations);
-	
-		// const allFiles = app.vault.getAllLoadedFiles();
-
-		// const root: Root = fromMarkdown(activeNoteText);
-
-		// this.latex = root.children.map((child: RootContent) => {
-		// 	const result = this.wrapper(child, 0);
-
-		// 	// // if tag, exlude it
-		// 	if (result && result.startsWith("#"))
-		// 		return;
-			
-		// 	return result;
-
-		// }).join("\n\n");
-
-	// 	this.refCite();
-	// 	this.mergeCloseRefCitations();
-
-	// 	this.image();
-	// 	this.refImage();
-
-	// 	this.removeMarkdownLeftovers();
-
-	// 	this.basicRef(); 
-
-	// 	this.fixLatexSpecialCharacters();
-
-	// 	// const attachments = await this.getAttachments(app, allFiles);
-
-	// 	const metadataNote = await this.getTemplateMetadataNote(app, `${this.settings.metadataNote}.md`);
-	// 	const pefTemplate = new PEFTemplate(metadataNote, this.latex, latexCitations, attachments);
-	// 	const template = pefTemplate.getTemplate();
-	// 	const xdipp = pefTemplate.getXdippSty();
-
-	// 	new SaveModal(app, async (path: string) => {
-			
-	// 		//@ts-ignore
-	// 		const basePath = app.vault.adapter.basePath;
-
-	// 		const vaultPath = basePath  + '\\' + "generated-latex-thesis";
-
-	// 		if (!fs.existsSync(vaultPath))
-	// 			fs.mkdirSync(vaultPath);
-
-	// 		const thesisName = path.replace('.md', '');
-
-	// 		const thesisDir = vaultPath + '\\' + thesisName + '_' + formatDateNow(); 
-
-	// 		fs.mkdirSync(thesisDir);
-
-	// 		const imageDirName = this.settings.latexImagesDirectoryName;
-	// 		const imageDirPath = thesisDir + '\\' + imageDirName;
-
-	// 		fs.mkdirSync(imageDirPath);
-
-	// 		let images: TAbstractFile[] = [];
-			
-	// 		this.images.forEach(img => {
-	// 			const imageObject = allFiles.find((file: TFile) => file.name.toLowerCase() === img.name.toLowerCase())
-	// 			if (imageObject)
-	// 				images.push(imageObject);
-	// 		});
-
-	// 		// move images
-	// 		images.forEach((image: TAbstractFile) => {
-				
-	// 			const oldPath = basePath + '\\' + image.path;
-	// 			const newPath = imageDirPath + '\\' + image.name;
-
-	// 			fs.copyFileSync(oldPath, newPath); 
-	// 		})
-			
-	// 		fs.writeFileSync(thesisDir + '\\' + 'main.tex', template);
-	// 		fs.writeFileSync(thesisDir + '\\' + 'xdipp.sty', xdipp);
-			
-	// 		new Notice(`${thesisName} and ${imageDirName} created successfully.`);
-	// 		new Notice(`${images.length} images copied successfully.`);
-	// 	}, false).open();
-
-	// }
 
 	heading(ast: Heading) {
 		const { depth, children } = ast;
@@ -345,41 +238,49 @@ export class GenerateLatex {
 		}
 
 		if (ast.type == 'image') {
-			return `\\obrazek\nvlozobrbox{${ast.url}}{1.0\\textwidth}{!}\n\\endobrl{${ast.alt}}\n{${ast.url}}`
-			// const replaceWith = `\\obrazek\nvlozobrbox{${name}}{1.0\\textwidth}{!}\n\\endobrl{${desc}}\n{${name}}`;
-			// 	// @ts-ignore
-			// 	this.latex = this.latex.replaceAll(raw, replaceWith);
+			this.images.push(ast);
+			return `\\obrazek\n\\vlozobrbox{${ast.url}}{1.0\\textwidth}{!}\n\\endobrl{${ast.alt}}\n{${ast.url}}`
 		} 
 
-		return (ast as Parent).children.map((child) => {
+		try {
+			return (ast as Parent).children.map((child) => {
 
-			if (ast.type == "paragraph") {
-				return this.wrapper(child);
-			}
-	
-			if (ast.type == "strong") {
-				return "\\textbf{" + this.wrapper(child) + "}";
-			}
-	
-			if (ast.type == "emphasis") {
-				return "{\\it " + this.wrapper(child) + "}";
-			}
+				if (ast.type == "paragraph") {
+					return this.wrapper(child);
+				}
+		
+				if (ast.type == "strong") {
+					return "\\textbf{" + this.wrapper(child) + "}";
+				}
+		
+				if (ast.type == "emphasis") {
+					return "{\\it " + this.wrapper(child) + "}";
+				}
 
-			if (ast.type == "listItem") {
-				// start of sublist, dont insert "\item"
-				if (child.type == "list") 
-					return "\n" + this.wrapper(child, indent);
+				if (ast.type == "listItem") {
+					// start of sublist, dont insert "\item"
+					if (child.type == "list") 
+						return "\n" + this.wrapper(child, indent);
 
-				return "\t".repeat(indent) + "\\item " + this.wrapper(child, indent);
-			}
-		}).join("");
+					return "\t".repeat(indent) + "\\item " + this.wrapper(child, indent);
+				}
+			}).join("");
+		} catch (error) {
+			this.errors.push({
+				type: 'unknown_markdown',
+				item: [ast.type],
+				message: `Markdown translation error: ${ast.type}.`
+			});
+			console.error(this.errors);
+		}
 	}
 
-	refCite() { 
-		const links = [...this.latex.matchAll(/\[\[.+?#(\w+)\]\]/g)];
+	refCite(latex: string) { 
+		const links = [...latex.matchAll(/\[\[.+?#(\w+)\]\]/g)];
 		links.forEach(([raw, clean]: any) => {
-			this.latex = this.latex.replace(raw, `\\cite{${clean}}`);
+			latex = latex.replace(raw, `\\cite{${clean}}`);
 		});
+		return latex;
 	}
 
 	parseLiteratureNote(note: string) {
@@ -457,6 +358,8 @@ export class GenerateLatex {
 			}
 		}
 
+		citations = citations.sort((a, b) => a.label.localeCompare(b.label));
+
 		const citationString = citations.map(({
 			 label, inline, authors, 
 			 title, subTitle, date, 
@@ -489,27 +392,14 @@ export class GenerateLatex {
 		return citationString;
 	}
 
-	image() {
-			// overwriting ![very cool description][image_1.png] with: 
-			// \obrazek
-			// \vlozobrbox{image_1.png}{1.0\textwidth}{!}
-			// \endobrl{very cool description}{image_1.png}
-		// console.log(this.images);
-		// this.images.forEach(([raw, desc, name]) => {
-		// 	const replaceWith = `\\obrazek\nvlozobrbox{${name}}{1.0\\textwidth}{!}\n\\endobrl{${desc}}\n{${name}}`;
-		// 	// @ts-ignore
-		// 	this.latex = this.latex.replaceAll(raw, replaceWith);
-		// })
-	}
-
-	refImage() {
-		const possibleImages = [...this.latex.matchAll(this.imageRefRegex)];
+	refImage(latex: string) {
+		const possibleImages = [...latex.matchAll(this.imageRefRegex)];
 
 		possibleImages.forEach(([raw, clean]) => {
 			const [ match ] = this.images.filter((img: LatexImageType) => img.name === clean);
 
 			if (match) {
-				this.latex = this.latex.replace(raw, `\\ref{${clean}}`);
+				latex = latex.replace(raw, `\\ref{${clean}}`);
 			} else {
 				this.errors.push({ type: 'image', item: [raw, clean], message: `Reference to image '${clean}' ('${raw}') is not valid.` })
 			}
@@ -519,9 +409,11 @@ export class GenerateLatex {
 			// then make \ref{id}
 			// this.note = this.note.replace(raw, `\\ref{${clean}}`);
 		});
+		
+		return latex;
 	}
 
-	mergeCloseRefCitations() {
+	mergeCloseRefCitations(latex: string) {
 		const regexes = [
 			new RegExp(/((\\cite{\w+}\s*){5})/g),
 			new RegExp(/((\\cite{\w+}\s*){4})/g),
@@ -530,13 +422,15 @@ export class GenerateLatex {
 		]
 
 		regexes.forEach((regex: RegExp) => {
-			const refs = [...this.latex.matchAll(regex)];
+			const refs = [...latex.matchAll(regex)];
 			refs.forEach((ref: any) => {
 				const matches = [...ref[0].matchAll(/\\cite{(\w+)}/g)];
 				const cleanRefs = matches.map((m: any) => m[1]).join(',');
-				this.latex = this.latex.replace(ref[0], `\\cite{${cleanRefs}}`)
+				latex = latex.replace(ref[0], `\\cite{${cleanRefs}}`)
 			})
 		})
+
+		return latex;
 	}
 
 	table(markdownTable: string) {
@@ -574,8 +468,8 @@ export class GenerateLatex {
 			});
 		}
 
-		let latexTable = `\\tabulka{${metadata.cite ? metadata.cite : ''}}\n` + 
-		`\\label{${metadata.label ? metadata.label : ''}}\n\\def\\arraystretch{1.5}\n` +
+		let latexTable = `\\tabulka{${metadata?.cite ? metadata.cite : ''}}\n` + 
+		`\\label{${metadata?.label ? metadata.label : ''}}\n\\def\\arraystretch{1.5}\n` +
 		`\\begin{tabular}{|l|c|c|} \\hline\n` + 
 		tHeader?.map((h: string, i: number) => `\\textbf{${h}} ` + (tHeader.length-1 != i ? '&' : `\\\\ \\hline`)).join("\n");
 
@@ -588,7 +482,7 @@ export class GenerateLatex {
 
 		latexTable += `\n\\end{tabular}\n`;
 
-		if (metadata.source) {
+		if (metadata?.source) {
 			latexTable += `\n\\tabzdroj{${metadata.source ? metadata.source : ''}}\n\\endtab`;
 		} else {
 			latexTable += '\\endtab';
@@ -617,7 +511,7 @@ export class GenerateLatex {
 			}
 		}
 
-		return `\\begin{lstlisting}[language=${ast.lang ?? "javascript"}, caption=${metadata.cite ?? ""}, label={${metadata.label ?? ''}}]\n` +
+		return `\\begin{lstlisting}[language=${ast.lang ?? "java"}, caption=${metadata.cite ?? ""}, label={${metadata.label ?? ''}}]\n` +
 			   ast.value + `\n\\end{lstlisting}`; 
 	}
 
@@ -625,26 +519,28 @@ export class GenerateLatex {
 		return `\\[ ${ast.value} \\]`
 	}
 
-	removeMarkdownLeftovers() {
+	removeMarkdownLeftovers(latex: string) {
 		// remove links [[foobar]] and [[#foobar]]
-		const links = [...this.latex.matchAll(/\[\[(.*)\]\]/g)];
+		const links = [...latex.matchAll(/\[\[(.*)\]\]/g)];
 
 		links.forEach(([raw, clean]) => {
 			if (clean.startsWith("#"))
 				clean = clean.replace("#", '')
 
-			this.latex = this.latex.replaceAll(raw, `${clean}`);
+			latex = latex.replaceAll(raw, `${clean}`);
 		});
+		
+		return latex;
 	}
 
 	// intext ref citation 
-	basicRef() {
-		const possibleRefs = [...this.latex.matchAll(/\[(\w+)\]/g)];
+	basicRef(latex: string) {
+		const possibleRefs = [...latex.matchAll(/\[(\w+)\]/g)];
 
 		possibleRefs.forEach(([raw, clean]) => {
 			// const [ match ] = this.images.filter((img: any) => img.name === clean);
 			
-			this.latex = this.latex.replace(raw, `\\ref{${clean}}`);
+			latex = latex.replace(raw, `\\ref{${clean}}`);
 			// if (match) {
 			// } else {
 			// 	this.errors.push({ type: 'basic_ref', item: [raw, clean], message: `Reference to '${clean}' ('${raw}') not found.` })
@@ -655,16 +551,18 @@ export class GenerateLatex {
 			// then make \ref{id}
 			// this.note = this.note.replace(raw, `\\ref{${clean}}`);
 		});
+
+		return latex;
 	}
 
 	// find all images in active note
 	// also get all possible/wrong images
 	getImages(note: string, allFiles: TAbstractFile[]) {
-		const images = [
-			...note.matchAll(/\!\[(.*)\]\[(.*)\]/g),
-			...note.matchAll(/\!\[(.*)\]\((.*)\)/g)
-		];		
-		const incorrectImages = [...note.matchAll(/\!\[\[(.*)\]\]/g)];
+		const images = [...note.matchAll(/\!\[(.*)\]\((.*)\)/g)];		
+		const incorrectImages = [
+			...note.matchAll(/\!\[\[(.*)\]\]/g),
+			...note.matchAll(/\!\[(.*)\]\[(.*)\]/g)
+		];
 		const correct = images.map(([raw, desc, name]) => ({ 
 			raw,
 			desc,
@@ -695,27 +593,46 @@ export class GenerateLatex {
 		if (attachments.length <= 0)
 			return null;
 
-		let attachmentLatex = "\\prilohy\n";
-
+		let attachmentLatex = "";
+		let images: LatexImagesStatus = {
+			correct: [],
+			incorrect: [],
+			count: 0
+		};
 		for await (const att of attachments) {
 			const note = await getNoteByName(app, att.path);
+
+			const {correct, incorrect, count} = this.getImages(note, allFiles);
+			if (count > 0) {
+				images = {
+					...images,
+					correct: [...images.correct, ...correct],
+					incorrect: [...images.incorrect, ...incorrect],
+					count: images.count + count
+				}
+			}
+
+			const latex = this.translateMarkdown(note);
+
 			attachmentLatex += (
 				`\n\\priloha{${(att as TFile).basename}}\n` +
-				`${note}\n`
+				`${latex}\n`
 			);
 		};
 
 		return { 
 			attachments,
-			latex: attachmentLatex 
+			images,
+			latex: attachmentLatex
 		};
 	}
 
 	// special characters: %, #, _
-	fixLatexSpecialCharacters() {
-		this.latex = this.latex.replaceAll("_", "\\_");
-		this.latex = this.latex.replaceAll("#", "\\#");
-		this.latex = this.latex.replaceAll("%", "\\%");
+	fixLatexSpecialCharacters(latex: string) {
+		latex = latex.replaceAll("_", "\\_");
+		latex = latex.replaceAll("#", "\\#");
+		latex = latex.replaceAll("%", "\\%");
+		return latex;
 	}
 
 	async getActiveNote(app: App, activeNote: TFile) {

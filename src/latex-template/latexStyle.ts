@@ -1,5 +1,5 @@
 export default `
-%%%%%%%%%%%%%%%%%%%%%%%% xdipp.sty
+%%%%%%%%%%%%%%%%%%%%%%%% latexstyle.sty
 %
 %  Styl pro sazbu diplomovych praci pro XeLaTeX, v. 2.1
 %  Freeware.
@@ -25,7 +25,6 @@ export default `
 %       b) definice cleardoublepage -- nezobrazuje číslo stránky na prázdné straně
 % 21. 3. 2019 -- verze 2.0, počáteční
 
-%%%%%%%%%%%%%%%%%%%%% JJ style
 \\usepackage{listings}
 
 
@@ -273,7 +272,6 @@ export default `
 					{\\normalfont\\normalsize\\doplsanserif\\bfseries}}
 
 
-% updated by JJ
 \\renewcommand\\lstlistingname{Seznam kódů} % předefinování nadpisu
 \\renewcommand\\lstlistlistingname{Seznam kódů} % předefinování nadpisu v obsahu
 % \\newcommand\\listequationsname{Seznam rovnic}

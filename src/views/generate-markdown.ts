@@ -1,6 +1,6 @@
 import { ItemView, WorkspaceLeaf, Notice, TAbstractFile, TFile, ButtonComponent, TextComponent, ValueComponent, TextAreaComponent } from "obsidian";
 import { fixSpaceInName, getNoteByName } from '../utils';
-import { LinkTreeType, BuildLinkTreeType, SlideType, CitationType, LatexImageType } from "src/types";
+import { LinkTreeType, BuildLinkTreeType, SlideType, CitationType, LatexImageType, LatexImagesStatus } from "src/types";
 import { GenerateMarkdownPluginSettingsType } from '../../main';
 import { SlidesMarkdown } from './generate-slides-markdown';
 import { GenerateLatex } from 'src/views/generate-latex';
@@ -97,7 +97,6 @@ export class GenerateMarkdown extends ItemView {
 				
 				this.renderLatexStatus(generateLatex);
 
-				// generateLatex.generate(this.insertThesisParts);
 			}, { cls: 'generate-plain-latex-btn'});
 	
 			new Button(this.subbar, 'Generate Latex With Template', () => {
@@ -212,7 +211,7 @@ export class GenerateMarkdown extends ItemView {
 		this.imageLatexStatus(images);
 
 		new Button(this.structure, 'Generate', () => {
-			generateLatex.generate();
+			generateLatex.generate(images);
 		}, { cls: 'generate-final-btn'});
 	}
 
@@ -325,7 +324,7 @@ export class GenerateMarkdown extends ItemView {
 		}
 
 		new Button(this.structure, 'Generate', () => {
-			generateLatex.generate(insertThesisParts);
+			generateLatex.generate(images, insertThesisParts);
 		}, { cls: 'generate-final-btn'});
 	}
 
@@ -333,11 +332,7 @@ export class GenerateMarkdown extends ItemView {
 		correct,
 		incorrect,
 		count
-	}: {
-		correct: LatexImageType[],
-		incorrect: LatexImageType[],
-		count: number
-	}) {
+	}: LatexImagesStatus) {
 		this.structure.createEl('h3', { 
 			text: 'Images' + (!!count ? ` (${count})` : '')
 		});
