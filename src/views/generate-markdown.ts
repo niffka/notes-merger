@@ -84,12 +84,8 @@ export class GenerateMarkdown extends ItemView {
 		});
 
 		new Button(this.generateLatexTabParent, 'Generate latex', async () => {
-			// const generateLatex = new GenerateLatex(this.app, this.settings);
-
-			// this.structure.empty();	
 			this.subbar.empty();
 
-			// this.renderLatexStatusPreview(generateLatex);
 			new Button(this.subbar, 'Generate Plain Latex', () => {
 				this.structure.empty();
 

@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import { Notice, App, TFile, TAbstractFile, } from 'obsidian';
-import { CitationType, LatexErrorType, AttachmentsType, LatexImagesStatus } from 'src/types';
+import { CitationType, LatexErrorType, AttachmentsType, LatexImagesStatus, LatexImageType } from 'src/types';
 import { fromMarkdown } from 'mdast-util-from-markdown'
 import { Root, Code, Heading, Text, InlineCode, Parent, Image } from 'mdast-util-from-markdown/lib'
 import { GenerateMarkdownPluginSettingsType } from 'main';
@@ -121,7 +121,6 @@ export class GenerateLatex {
 
 		latex = this.refCite(latex);
 		latex = this.mergeCloseRefCitations(latex);
-
 		latex = this.refImage(latex);
 		latex = this.removeMarkdownLeftovers(latex);
 		latex = this.basicRef(latex); 
@@ -393,21 +392,15 @@ export class GenerateLatex {
 	}
 
 	refImage(latex: string) {
-		const possibleImages = [...latex.matchAll(this.imageRefRegex)];
-
-		possibleImages.forEach(([raw, clean]) => {
-			const [ match ] = this.images.filter((img: LatexImageType) => img.name === clean);
+		const refs = [...latex.matchAll(this.imageRefRegex)];
+		refs.forEach(([raw, clean]) => {
+			const [ match ] = this.images.filter((img) => img.url === clean);
 
 			if (match) {
 				latex = latex.replace(raw, `\\ref{${clean}}`);
 			} else {
 				this.errors.push({ type: 'image', item: [raw, clean], message: `Reference to image '${clean}' ('${raw}') is not valid.` })
 			}
-			
-			// compare clean with images array and
-			//  get id from images
-			// then make \ref{id}
-			// this.note = this.note.replace(raw, `\\ref{${clean}}`);
 		});
 		
 		return latex;
