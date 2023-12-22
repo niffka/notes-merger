@@ -1,6 +1,6 @@
 import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
-import { GenerateMarkdown, VIEW_CONTENT_COMPOSE_NOTES } from 'src/views/generate-markdown';
-export interface GenerateMarkdownPluginSettingsType {
+import { NotesMerger, VIEW_CONTENT_COMPOSE_NOTES } from 'src/views/notes-merger';
+export interface NotesMergerPluginSettingsType {
 	listOfLinksKeyword: string;
 	literatureNote: string;
 	insertPreviewContent: boolean;
@@ -11,7 +11,7 @@ export interface GenerateMarkdownPluginSettingsType {
 	attachmentsDir: string;
 }
 
-const DEFAULT_SETTINGS: GenerateMarkdownPluginSettingsType = {
+const DEFAULT_SETTINGS: NotesMergerPluginSettingsType = {
 	listOfLinksKeyword: 'Kam dál',
 	literatureNote: 'Literature',
 	insertPreviewContent: true,
@@ -22,21 +22,21 @@ const DEFAULT_SETTINGS: GenerateMarkdownPluginSettingsType = {
 	attachmentsDir: 'prilohy'
 }
 
-export default class GenerateMarkdownPlugin extends Plugin {
-	settings: GenerateMarkdownPluginSettingsType;
+export default class NotesMergerPlugin extends Plugin {
+	settings: NotesMergerPluginSettingsType;
 
 	async onload() {
 		await this.loadSettings();
 
-		this.addSettingTab(new GenerateMarkdownPluginSettingTab(this.app, this));	
+		this.addSettingTab(new NotesMergerPluginSettingTab(this.app, this));	
 
 		this.registerView(
 			VIEW_CONTENT_COMPOSE_NOTES,
-			(leaf) => new GenerateMarkdown(leaf, this.settings)
+			(leaf) => new NotesMerger(leaf, this.settings)
 		);
 		
 		this.addRibbonIcon("scroll", "NotesMerger", () => {
-			this.activateGenerateMarkdownView();
+			this.activateNotesMergerView();
 		});
 
 		// this.addCommand({
@@ -48,7 +48,7 @@ export default class GenerateMarkdownPlugin extends Plugin {
 		// });
 	}
 
-	async activateGenerateMarkdownView() {
+	async activateNotesMergerView() {
 		if (!this.app.workspace.getLeavesOfType(VIEW_CONTENT_COMPOSE_NOTES).length) {
 			await this.app.workspace.getRightLeaf(false).setViewState({
 				type: VIEW_CONTENT_COMPOSE_NOTES,
@@ -73,10 +73,10 @@ export default class GenerateMarkdownPlugin extends Plugin {
 	}
 }
 
-class GenerateMarkdownPluginSettingTab extends PluginSettingTab {
-	plugin: GenerateMarkdownPlugin;
+class NotesMergerPluginSettingTab extends PluginSettingTab {
+	plugin: NotesMergerPlugin;
 
-	constructor(app: App, plugin: GenerateMarkdownPlugin) {
+	constructor(app: App, plugin: NotesMergerPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}

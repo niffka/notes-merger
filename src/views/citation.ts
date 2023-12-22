@@ -1,11 +1,11 @@
 import { Notice, App, TFile, TAbstractFile, } from 'obsidian';
-import { GenerateMarkdownPluginSettingsType } from 'main';
+import { NotesMergerPluginSettingsType } from 'main';
 
 export class Citation {
 	label: string;
-	settings: GenerateMarkdownPluginSettingsType;
+	settings: NotesMergerPluginSettingsType;
 
-	constructor(label: string, settings: GenerateMarkdownPluginSettingsType) {
+	constructor(label: string, settings: NotesMergerPluginSettingsType) {
 		this.label = label;
 		this.settings = settings;
 	}

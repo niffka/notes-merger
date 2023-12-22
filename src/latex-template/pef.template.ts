@@ -1,6 +1,6 @@
 import { LatexTemplate } from './template';
 import { AttachmentsType } from 'src/types';
-import latexStyle from './latexStyle';
+import latexStyle from './latex-style';
 export class PEFTemplate extends LatexTemplate {
 
 	thesis: string;

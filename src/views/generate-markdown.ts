@@ -1,7 +1,7 @@
-import { ItemView, WorkspaceLeaf, Notice, TAbstractFile, TFile, ButtonComponent, TextComponent, ValueComponent, TextAreaComponent } from "obsidian";
+import { App, Notice, TAbstractFile, TFile } from "obsidian";
 import { fixSpaceInName, getNoteByName } from '../utils';
 import { LinkTreeType, BuildLinkTreeType, SlideType, CitationType, LatexImageType, LatexImagesStatus } from "src/types";
-import { GenerateMarkdownPluginSettingsType } from '../../main';
+import { NotesMergerPluginSettingsType } from '../../main';
 import { SlidesMarkdown } from './generate-slides-markdown';
 import { GenerateLatex } from 'src/views/generate-latex';
 import {
@@ -15,94 +15,82 @@ import {
 } from '../components/index';
 
 
-export const VIEW_CONTENT_COMPOSE_NOTES = "view-generate-markdown";
+export class GenerateMarkdown {
 
-
-export class GenerateMarkdown extends ItemView {
-	
-	settings: GenerateMarkdownPluginSettingsType;
-
-	container: Element;
-	toolbar: Element;
-	subbar: Element;
-	structure: Element;
-	generateMarkdownTabParent: Element;
-	generateLatexTabParent: Element;
-	
-	generateMarkdownParent: Element;
-	generatePreviewParent: Element;
-	generateSlidesParent: Element;
-	generateLatexParent: Element;
-
-	linksTree: LinkTreeType[] = [];
+	app: App;
+	settings: NotesMergerPluginSettingsType;
 	loadedFiles: TAbstractFile[] = [];
+	mainNameLinks: string[] = [];
+	linksTree: LinkTreeType[] = [];
 	maxLevel: number = 0;
 	processed: string[] = [];
-	mainNameLinks: string[] = [];
-
 	markdown: string = "";
 	ignoredLinks: string[] = [];
 	images: string[] = [];
 	generateLatex: GenerateLatex;
-
-	previewContent: string = '';
-
+	subbar: Element;
+	structure: Element;
 	static imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'tiff', 'bmp'].map((it: string) => `.${it}`);
 
-	constructor(leaf: WorkspaceLeaf, settings: GenerateMarkdownPluginSettingsType) {
-		super(leaf);
+	constructor(app: App, settings: NotesMergerPluginSettingsType, structure: Element, subbar: Element) {
+		this.app = app;
 		this.settings = settings;
+
+		this.structure = structure;
+		this.subbar = subbar;
+
+		this.linksTree = [];
+		this.maxLevel = 0;
+		this.processed = [];
+		this.mainNameLinks = [];
+		this.ignoredLinks = [];
+		this.markdown = "";
 	}
 
-	async onOpen() {
-		const container = this.containerEl.children[1];
+	async readSelectedNote() {
+		this.loadedFiles = this.app.vault.getMarkdownFiles();
 
-		this.container = container;
-		container.empty();
+		const activeNote = this.app.workspace.getActiveFile();
 
-		this.toolbar = container.createEl('div', { cls: 'toolbar'});
-		this.generateMarkdownTabParent = this.toolbar.createEl('div', { cls: 'generate-markdown-tab-btn' });
-		this.generateLatexTabParent = this.toolbar.createEl('div', { cls: 'generate-latex-tab-btn' });
+		if (!activeNote) {
+			new Notice(`Selected note is invalid.`);
+			throw new Error("Selected note is invalid.");
+		}
+		const activeNoteText = await getNoteByName(this.app, activeNote.path);
 
-		this.subbar = container.createEl('div', { cls: 'subbar' });
+		const mainContentLinks = this.parseLinks(activeNoteText, true);
+		
+		this.mainNameLinks = mainContentLinks.map((l: LinkTreeType) => l.name);
 
-		this.structure = this.container.createEl('div');
+		this.linksTree = await this.generateNotesHierarchy(mainContentLinks);
 
-		new Button(this.generateMarkdownTabParent, 'Generate preview', () => {
-			// empty state
-			this.linksTree = [];
-			this.maxLevel = 0;
-			this.processed = [];
-			this.mainNameLinks = [];
-			this.ignoredLinks = [];
-			this.markdown = "";
+		const title = activeNote.basename;
+		new BaseLink(this.app, this.structure, title);
+
+		new TreeMenu(this.app, this.structure, this.linksTree, (ignoredLinks: string[]) => {
+			this.ignoredLinks = ignoredLinks;
+		});
+
+		new Button(this.subbar, 'Generate markdown', () => {
 			
-			this.structure.empty();
-			this.subbar.empty();
+			// cleanup
+			this.markdown = "";
 
-			this.readSelectedNote();
-		});
+			this.generateMarkdownFile(this.linksTree, activeNoteText);
+		}, { cls: 'generate-markdown-btn'});
 
-		new Button(this.generateLatexTabParent, 'Generate latex', async () => {
-			this.subbar.empty();
+		new Button(this.subbar, 'Generate slideshow', () => {
+			new SlidesModal(this.app, this.linksTree, this.ignoredLinks, (slides: SlideType[], hasTitleSlide: boolean, hasLastSlide: boolean) => {
+				const slidesMD = new SlidesMarkdown(slides, title, hasTitleSlide, hasLastSlide);
 
-			new Button(this.subbar, 'Generate Plain Latex', () => {
-				this.structure.empty();
+				new SaveModal(this.app, async (path: string) => {
+					await this.app.vault.adapter.write(path, slidesMD.slideshow)
+					new Notice(`Slideshow ${path} created successfully`);
+					this.app.workspace.openLinkText(path, "")
 
-				const generateLatex = new GenerateLatex(this.app, this.settings);
-				
-				this.renderLatexStatus(generateLatex);
-
-			}, { cls: 'generate-plain-latex-btn'});
-	
-			new Button(this.subbar, 'Generate Latex With Template', () => {
-				this.structure.empty();
-
-				const generateLatex = new GenerateLatex(this.app, this.settings);
-	
-				this.renderLatexWithTemplateStatus(generateLatex);
-			}, { cls: 'generate-template-latex-btn'})
-		});
+				}).open();
+			}).open();
+		}, { cls: 'generate-slides-btn'})
 	}
 
 	parseLinks(text: string, index: boolean = false) {
@@ -149,52 +137,6 @@ export class GenerateMarkdown extends ItemView {
 		}).filter(Boolean);
 
 		return existingNotes as LinkTreeType[];
-	}
-
-	async readSelectedNote() {
-		this.loadedFiles = app.vault.getMarkdownFiles();
-
-		const activeNote = this.app.workspace.getActiveFile();
-
-		if (!activeNote) {
-			new Notice(`Selected note is invalid.`);
-			throw new Error("Selected note is invalid.");
-		}
-		const activeNoteText = await getNoteByName(this.app, activeNote.path);
-
-		const mainContentLinks = this.parseLinks(activeNoteText, true);
-		
-		this.mainNameLinks = mainContentLinks.map((l: LinkTreeType) => l.name);
-
-		this.linksTree = await this.generateNotesHierarchy(mainContentLinks);
-
-		const title = activeNote.basename;
-		new BaseLink(this.app, this.structure, title);
-
-		new TreeMenu(this.app, this.structure, this.linksTree, (ignoredLinks: string[]) => {
-			this.ignoredLinks = ignoredLinks;
-		});
-
-		new Button(this.subbar, 'Generate markdown', () => {
-			
-			// cleanup
-			this.markdown = "";
-
-			this.generateMarkdownFile(this.linksTree, activeNoteText);
-		}, { cls: 'generate-markdown-btn'});
-
-		new Button(this.subbar, 'Generate slideshow', () => {
-			new SlidesModal(this.app, this.linksTree, this.ignoredLinks, (slides: SlideType[], hasTitleSlide: boolean, hasLastSlide: boolean) => {
-				const slidesMD = new SlidesMarkdown(slides, title, hasTitleSlide, hasLastSlide);
-
-				new SaveModal(this.app, async (path: string) => {
-					await this.app.vault.adapter.write(path, slidesMD.slideshow)
-					new Notice(`Slideshow ${path} created successfully`);
-					this.app.workspace.openLinkText(path, "")
-
-				}).open();
-			}).open();
-		}, { cls: 'generate-slides-btn'})
 	}
 
 	async renderLatexStatus(generateLatex: GenerateLatex) {
@@ -586,17 +528,5 @@ export class GenerateMarkdown extends ItemView {
 		return specialArr
 			.map(row => typeof row === 'string' ? row : row.join("\n"))
 			.join("\n");
-	}
-
-	async onClose() {
-		// Nothing to clean up.
-	}
-
-	getViewType() {
-		return VIEW_CONTENT_COMPOSE_NOTES;
-	}
-
-	getDisplayText() {
-		return "Notes Merger";
 	}
 }
