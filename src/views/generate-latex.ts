@@ -444,7 +444,7 @@ export class GenerateLatex {
 
 	refCite(latex: string) { 
 		const links = [...latex.matchAll(/\[\[.+?#(\w+)\]\]/g)];
-		links.forEach(([raw, clean]: any) => {
+		links.forEach(([raw, clean]: [string, string]) => {
 			latex = latex.replace(raw, `\\cite{${clean}}`);
 		});
 		return latex;

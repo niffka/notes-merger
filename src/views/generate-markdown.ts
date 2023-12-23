@@ -351,18 +351,13 @@ export class GenerateMarkdown {
 			// trim enters and spaces
 			let note = link.note.trim();
 
-			
-			
-			
 			note = this.cleanNote(link, note);
-			
-
 			// remove 'Kam dál' part
 			if (note.includes(this.settings.listOfLinksKeyword)) {
 				let [importantPart, endPart] = note.split(this.settings.listOfLinksKeyword);
 				note = importantPart.trim();
 			}
-			
+
 			const title = this.transformTitle(link);
 
 			note = `${title}\n${note}`;
@@ -379,18 +374,21 @@ export class GenerateMarkdown {
 
 	cleanNote(link: LinkTreeType, note: string) {
 		// remove title on a first line
-		let noteRows = note.split('\n');
-		let firstRow = fixSpaceInName(noteRows[0]);
+		const noteRows = note.split('\n');
+		const firstRow = fixSpaceInName(noteRows[0]);
 		if (firstRow.includes(`# ${link.name}`)) {
 			noteRows.shift();
 			note = noteRows.join("\n").trim();
 		}
-		
+
 		// remove status tag (#dokoncene, #rozpracovane)
-		note = note.replace(/#[\w\s]+\n/g, "");
+		note = note.replaceAll(/(#\w)+(.*)\n*/g, "");
 
 		// replace any titles in local note to bold 
-		note = note.replace(/#+\s+(.*)\n/g, "\n**$1**\n");
+		const localHeading = note.matchAll(/#+\s+(.*)\n/g);
+		[...localHeading].forEach(([raw, cl]: [string, string]) => {
+			note = note.replace(raw, `**${cl.trim()}**\n`)
+		});
 
 		return note;
 	}
@@ -411,7 +409,7 @@ export class GenerateMarkdown {
 	async generateNotesHierarchy(links: LinkTreeType[]) {
 		const linksObj: BuildLinkTreeType = await this.createParentStructure(links, 0, []);
 		let linksArr: LinkTreeType[] = [];
-		
+
 		Object.keys(linksObj).forEach(key => {
 			const {parentRef, ...rest} = linksObj[key as keyof BuildLinkTreeType] as BuildLinkTreeType; 
 			linksArr.push({...rest, parent: (linksObj[key as keyof BuildLinkTreeType] as BuildLinkTreeType)?.parentRef?.name});
@@ -450,7 +448,7 @@ export class GenerateMarkdown {
 
 			let note = await getNoteByName(this.app, link.path)
 			const subLinks = this.parseLinks(note);
-		
+
 			this.maxLevel = level + 1;
 
 			if (note.includes(this.settings.listOfLinksKeyword)) {
