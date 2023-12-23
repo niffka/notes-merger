@@ -63,7 +63,7 @@ export class GenerateMarkdown {
 		this.mainNameLinks = mainContentLinks.map((l: LinkTreeType) => l.name);
 
 		this.linksTree = await this.generateNotesHierarchy(mainContentLinks);
-		
+
 		const title = activeNote.basename;
 		new BaseLink(this.app, this.structure, title);
 
@@ -156,7 +156,7 @@ export class GenerateMarkdown {
 	}
 
 	async renderLatexWithTemplateStatus(generateLatex: GenerateLatex) {
-		let insertThesisParts: Record<string, boolean> = {
+		const insertThesisParts: Record<string, boolean> = {
 			metadata: true,
 			literature: true,
 			attachments: true
@@ -354,7 +354,7 @@ export class GenerateMarkdown {
 			note = this.cleanNote(link, note);
 			// remove 'Kam dál' part
 			if (note.includes(this.settings.listOfLinksKeyword)) {
-				let [importantPart, endPart] = note.split(this.settings.listOfLinksKeyword);
+				const [importantPart, endPart] = note.split(this.settings.listOfLinksKeyword);
 				note = importantPart.trim();
 			}
 
@@ -374,7 +374,7 @@ export class GenerateMarkdown {
 
 	cleanNote(link: LinkTreeType, note: string) {
 		// remove title on a first line
-		const noteRows = note.split('\n');
+		let noteRows = note.split('\n');
 		const firstRow = fixSpaceInName(noteRows[0]);
 		if (firstRow.includes(`# ${link.name}`)) {
 			noteRows.shift();
@@ -382,15 +382,23 @@ export class GenerateMarkdown {
 		}
 
 		// remove status tag (#dokoncene, #rozpracovane)
-		note = note.replaceAll(/(#\w)+(.*)\n*/g, "");
+		noteRows = note.split('\n');
+		note = noteRows.reduce((acc: string, row: string) => {
+			let val = acc + row;
+			if (row.match(/^(#\w)+(.*)/)) {
+				val = acc;
+			}
+			
+			return val + '\n';
+			
+		}, '');
 
 		// replace any titles in local note to bold 
 		const localHeading = note.matchAll(/#+\s+(.*)\n/g);
 		[...localHeading].forEach(([raw, cl]: [string, string]) => {
 			note = note.replace(raw, `**${cl.trim()}**\n`)
 		});
-
-		return note;
+		return note.trim();
 	}
 
 	transformTitle(link: LinkTreeType) {
@@ -486,8 +494,8 @@ export class GenerateMarkdown {
 	insertToNearestNewLine(note: string, links: LinkTreeType[]) {
 		// find common line
 		// create array at that line
-		// if new common comes, push it to
-		// at the end make it simple string
+		// if new common comes, push it there
+		// at the end make it back to string
 
 		let specialArr: (string|[])[] = [];
 	
@@ -522,12 +530,12 @@ export class GenerateMarkdown {
 
 			note = this.cleanNote(link, note);
 
-			(specialArr[findClosestHigher] as Array<string>).push('\n', title, note);
+			(specialArr[findClosestHigher] as Array<string>).push(title, note);
 		});
 
 		// flatten and join to string
 		return specialArr
 			.map(row => typeof row === 'string' ? row : row.join("\n"))
-			.join("\n");
+			.join("\n").trim() + "\n";
 	}
 }

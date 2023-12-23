@@ -148,6 +148,7 @@ h3 {
 	width: 100%;
 	display: flex;
 	margin-top: 15px;
+	margin-bottom: 15px;
 }
 
 .generate-markdown-tab-btn {
