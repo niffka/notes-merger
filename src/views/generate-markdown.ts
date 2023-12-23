@@ -352,7 +352,9 @@ export class GenerateMarkdown {
 			if (note.length == 0)
 				return;
 			
+			console.log("before clean",note);
 			note = this.cleanNote(link, note);
+			console.log("after clean", note);
 
 			// remove 'Kam dál' part
 			if (note.includes(this.settings.listOfLinksKeyword)) {
@@ -387,7 +389,7 @@ export class GenerateMarkdown {
 		note = note.replace(/#[\w\s]+\n/g, "");
 
 		// replace any titles in local note to bold 
-		note = note.replace(/#+\s+(.*)\n/g, "**$1**\n");
+		note = note.replace(/#+\s+(.*)\n/g, "\n**$1**\n");
 
 		return note;
 	}

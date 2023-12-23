@@ -304,7 +304,7 @@ export class GenerateLatex {
 			//@ts-ignore
 			const basePath = app.vault.adapter.basePath;
 
-			const vaultPath = basePath  + '\\' + "generated-latex-thesis";
+			const vaultPath = basePath  + '\\' + "generated-latex";
 
 			if (!fs.existsSync(vaultPath))
 				fs.mkdirSync(vaultPath);

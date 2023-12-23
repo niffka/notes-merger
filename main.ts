@@ -12,7 +12,7 @@ export interface NotesMergerPluginSettingsType {
 }
 
 const DEFAULT_SETTINGS: NotesMergerPluginSettingsType = {
-	listOfLinksKeyword: 'Kam dál',
+	listOfLinksKeyword: 'Next',
 	literatureNote: 'Literature',
 	insertPreviewContent: true,
 	insertIndexNote: false,
