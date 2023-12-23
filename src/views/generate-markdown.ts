@@ -63,7 +63,7 @@ export class GenerateMarkdown {
 		this.mainNameLinks = mainContentLinks.map((l: LinkTreeType) => l.name);
 
 		this.linksTree = await this.generateNotesHierarchy(mainContentLinks);
-
+		
 		const title = activeNote.basename;
 		new BaseLink(this.app, this.structure, title);
 
@@ -115,8 +115,10 @@ export class GenerateMarkdown {
 			let isInline = true;			
 			if (text.includes(this.settings.listOfLinksKeyword)) {
 				let [inlineText, linksText] = text.split(this.settings.listOfLinksKeyword);
-				if (!inlineText.includes(cl))
+				if (!inlineText.includes(`[[${cl}]]`)){
 					isInline = false;
+				}
+					
 			}
 
 			let isIndex = false;
@@ -349,12 +351,11 @@ export class GenerateMarkdown {
 			// trim enters and spaces
 			let note = link.note.trim();
 
-			if (note.length == 0)
-				return;
 			
-			console.log("before clean",note);
+			
+			
 			note = this.cleanNote(link, note);
-			console.log("after clean", note);
+			
 
 			// remove 'Kam dál' part
 			if (note.includes(this.settings.listOfLinksKeyword)) {
