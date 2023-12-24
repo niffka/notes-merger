@@ -1,5 +1,5 @@
 # Notes Merger
-![notes merger preview](https://github.com/niffka/notes-merger/blob/main/src/images/generate_markdown.png)
+![notes merger preview](https://github.com/niffka/notes-merger/blob/dev/src/images/generate_markdown.png)
 
 
 This plugin enables you to generate a content tree structure by traversing all links and nesting them within notes. Merge multiple Markdown files into a single, unified Markdown file based on the generated tree structure. Create a template for `obsidian advanced slides` plugin (https://mszturc.github.io/obsidian-advanced-slides/). Translate markdown file into XeLatex with usage of custom latex templates.
