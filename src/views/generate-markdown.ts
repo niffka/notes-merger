@@ -84,6 +84,7 @@ export class GenerateMarkdown {
 				const slidesMD = new SlidesMarkdown(slides, title, hasTitleSlide, hasLastSlide);
 
 				new SaveModal(this.app, async (path: string) => {
+					slidesMD.copyTemplates();
 					await this.app.vault.adapter.write(path, slidesMD.slideshow)
 					new Notice(`Slideshow ${path} created successfully`);
 					this.app.workspace.openLinkText(path, "")

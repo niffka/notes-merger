@@ -1,5 +1,6 @@
+import * as fs from 'fs';
 import { SlideType } from "src/types";
-
+import { title, last, basic, image, split } from 'src/slideshow-template/default';
 export class SlidesMarkdown {
 
 	slides: SlideType[] = [];
@@ -102,5 +103,28 @@ export class SlidesMarkdown {
 			`###### Write description and source here.\n` +
 			`:::\n\n`;
 			
+	}
+
+	copyTemplates() {
+		// generate to templates
+		// check if templates exists
+		// if not create it
+		// copy all files there
+
+		// @ts-ignore
+		const basePath = app.vault.adapter.basePath;
+		//FIXME: fix for windows and linux
+		const vaultPath = basePath  + '/' + "slideshow-templates";
+		console.log(vaultPath);
+
+
+		if (!fs.existsSync(vaultPath))
+			fs.mkdirSync(vaultPath);
+
+		const templates: Record<string, string> = {title, last, basic, image, split};
+
+		Object.keys(templates).forEach((templateName: string) => {
+			fs.writeFileSync(vaultPath + '/' + `${templateName}.md`, templates[templateName]);
+		});
 	}
 }
