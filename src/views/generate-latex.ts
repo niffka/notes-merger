@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as Path from 'path';
 import { Notice, App, TFile, TAbstractFile, } from 'obsidian';
 import { CitationType, LatexErrorType, AttachmentsType, LatexImagesStatus, LatexImageType } from 'src/types';
 import { fromMarkdown } from 'mdast-util-from-markdown'
@@ -304,19 +305,19 @@ export class GenerateLatex {
 			//@ts-ignore
 			const basePath = app.vault.adapter.basePath;
 
-			const vaultPath = basePath  + '\\' + "generated-latex";
+			const vaultPath = Path.join(basePath, 'generated-latex');
 
 			if (!fs.existsSync(vaultPath))
 				fs.mkdirSync(vaultPath);
 
 			const thesisName = path.replace('.md', '');
 
-			const thesisDir = vaultPath + '\\' + thesisName + '_' + formatDateNow(); 
+			const thesisDir = Path.join(vaultPath, thesisName + '_' + formatDateNow()); 
 
 			fs.mkdirSync(thesisDir);
 
 			const imageDirName = this.settings.latexImagesDirectoryName;
-			const imageDirPath = thesisDir + '\\' + imageDirName;
+			const imageDirPath = Path.join(thesisDir, imageDirName);
 
 			fs.mkdirSync(imageDirPath);
 
@@ -331,15 +332,15 @@ export class GenerateLatex {
 			// move images
 			images.forEach((image: TAbstractFile) => {
 				
-				const oldPath = basePath + '\\' + image.path;
-				const newPath = imageDirPath + '\\' + image.name;
+				const oldPath = Path.join(basePath, image.path);
+				const newPath = Path.join(imageDirPath, image.name);
 
 				fs.copyFileSync(oldPath, newPath); 
 			})
 			
-			fs.writeFileSync(thesisDir + '\\' + 'main.tex', thesis);
+			fs.writeFileSync(Path.join(thesisDir, 'main.tex'), thesis);
 			if (!isPlain)
-				fs.writeFileSync(thesisDir + '\\' + 'latexStyle.sty', latexTemplate);
+				fs.writeFileSync(Path.join(thesisDir, 'latexStyle.sty'), latexTemplate);
 
 			
 			new Notice(`${thesisName} and ${imageDirName} created successfully.`);
