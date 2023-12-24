@@ -1,6 +1,7 @@
 import { LatexTemplate } from './template';
 import { AttachmentsType } from 'src/types';
 import latexStyle from './latex-style';
+import { NotesMergerPluginSettingsType } from 'main';
 export class PEFTemplate extends LatexTemplate {
 
 	thesis: string;
@@ -22,10 +23,11 @@ export class PEFTemplate extends LatexTemplate {
 	];
 
 	allowedTypes = ["bachelor", "master", "dissertation", "scientific"];
+	settings: NotesMergerPluginSettingsType;
 
-	constructor(rawMetadata: string) {
+	constructor(rawMetadata: string, settings: NotesMergerPluginSettingsType) {
 		super();
-
+		this.settings = settings;
 		this.parseMetadata(rawMetadata);
 	}
 
@@ -45,7 +47,7 @@ export class PEFTemplate extends LatexTemplate {
 % pro tisk po jedné straně papíru je potřebné odstranit volbu twoside
 \\usepackage{latexstyle}
 \\usepackage{graphicx} %package to manage images
-\\graphicspath{ {./obrazky/} }
+\\graphicspath{ {./${this.settings.latexImagesDirectoryName}/} }
 % \\cestina % implicitní
 % \\slovencina
 % \\english
