@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as Path from 'path';
 import { Notice, App, TFile, TAbstractFile, } from 'obsidian';
-import { CitationType, LatexErrorType, AttachmentsType, LatexImagesStatus, LatexImageType } from 'src/types';
+import { CitationType, BookCitationType, WebCitationType, LatexErrorType, AttachmentsType, LatexImagesStatus, LatexImageType } from 'src/types';
 import { fromMarkdown } from 'mdast-util-from-markdown'
 import { Root, Code, Heading, Text, InlineCode, Parent, Image } from 'mdast-util-from-markdown/lib'
 import { NotesMergerPluginSettingsType } from 'main';
@@ -16,19 +16,19 @@ import {
 	SaveModal, 
 	Checkbox,
 	ErrorIcon,
+	CollapsibleCitation
 } from '../components/index';
 
 export class GenerateLatex { 
 	app: App;
 	settings: NotesMergerPluginSettingsType;
 	literatureNote: string;
-	literature: CitationType[] = [];
+	literature: Array<BookCitationType|WebCitationType> = [];
 	citations: CitationType[] = [];
 	images: Image[] = [];
 	errors: LatexErrorType[] = [];
 	activeNote: TFile;
 	activeNoteText: string;
-	metadata: Record<string, string | null> | null
 	attachments: AttachmentsType | null; 
 	allFiles: TAbstractFile[]
 	template: PEFTemplate;
@@ -53,36 +53,37 @@ export class GenerateLatex {
 		this.activeNote = activeNote;
 	}
 
-	async loadRequirements() {
+	async loadRequirements(isPlain: boolean = false) {
 		this.activeNoteText = await this.getActiveNote(this.app, this.activeNote);
-
-		this.literatureNote = await this.getLiteratureNote(this.app, this.settings.literatureNote);
-		this.literature = this.parseLiteratureNote(this.literatureNote);
 
 		this.allFiles = app.vault.getAllLoadedFiles();
 		
-		this.attachments = await this.getAttachments(this.app, this.allFiles);
-
-		const metadataNote = await this.getTemplateMetadataNote(this.app, `${this.settings.metadataNote}.md`);
-
-		this.template = new PEFTemplate(metadataNote);
-
-		this.metadata = this.template.getMetadata();
-
 		let images: LatexImagesStatus = this.getImages(this.activeNoteText, this.allFiles);
-		
-		if (this.attachments?.images) {
-			const { correct, incorrect, count } = this.attachments.images; 
-			images = {
-				...images, 
-				correct: [...images.correct, ...correct],
-				incorrect: [...images.incorrect, ...incorrect],
-				count: images.count + count
+		let metadata: Record<string, string | null> | null  = null;
+		if (!isPlain) {
+			this.literatureNote = await this.getLiteratureNote(this.app, this.settings.literatureNote);
+			this.literature = this.parseLiteratureNote(this.literatureNote);
+
+			this.attachments = await this.getAttachments(this.app, this.allFiles);
+
+			const metadataNote = await this.getTemplateMetadataNote(this.app, `${this.settings.metadataNote}.md`);
+			this.template = new PEFTemplate(metadataNote, this.settings);
+			
+			metadata = this.template.getMetadata();
+
+			if (this.attachments?.images) {
+				const { correct, incorrect, count } = this.attachments.images; 
+				images = {
+					...images, 
+					correct: [...images.correct, ...correct],
+					incorrect: [...images.incorrect, ...incorrect],
+					count: images.count + count
+				}
 			}
 		}
 
 		return {
-			metadata: this.metadata,
+			metadata: metadata,
 			attachments: this.attachments,
 			literature: this.literature,
 			images,
@@ -94,7 +95,7 @@ export class GenerateLatex {
 		this.structure.empty();	
 		
 		new BaseLink(this.app, this.structure, generateLatex.activeNote.basename);
-		const { images } = await generateLatex.loadRequirements();
+		const { images } = await generateLatex.loadRequirements(true);
 
 		this.imageLatexStatus(images);
 
@@ -158,7 +159,7 @@ export class GenerateLatex {
 			Object.keys(metadata).forEach((key: string) => {
 				const tr = table.createEl('tr');
 				tr.createEl('th', { text: key }).setAttr("align", "left");
-				tr.createEl('td', { text: metadata[key] || "–⁠⁠⁠⁠⁠⁠⁠⁠⁠" }).setAttr("align", metadata[key] ? "left" : "center");
+				tr.createEl('td', { text: metadata[key] || "–⁠⁠⁠⁠⁠⁠⁠⁠⁠" });
 			});
 		} else {
 			this.structure.createEl('div', { text: 'Metadata not loaded.'});
@@ -177,12 +178,13 @@ export class GenerateLatex {
 			contentEl = this.structure.createEl('div')
 			literature.forEach((lit: CitationType) => {
 				const litEl = contentEl.createEl('div', { cls: 'row-spacy'});
-				litEl.createEl('a', { text: lit.label, cls: 'bold' });
-				litEl.onclick = () => {
+				const labelEl = litEl.createEl('a', { text: lit.label, cls: 'bold' });
+				labelEl.onclick = () => {
 					const literatureLinkPath = `${this.settings.literatureNote}#${lit.label}`;
 					this.app.workspace.openLinkText(literatureLinkPath, "")
 				}
 				litEl.createEl('div', { text: lit.title });
+				new CollapsibleCitation(litEl, lit, false);
 			});
 		} else {
 			this.structure.createEl('div', { text: 'Literature not loaded.'});
@@ -454,7 +456,9 @@ export class GenerateLatex {
 	parseLiteratureNote(note: string) {
 		let notesRow: string[] = note.split('\n');
 
-		let citations: CitationType[] = [];
+		let citations: Array<WebCitationType|BookCitationType> = [];
+
+		let incorrectCitations = [];
 
 		while (notesRow.length > 0) {
 			const row = notesRow.shift() as string;
@@ -463,49 +467,57 @@ export class GenerateLatex {
 			
 			if (row.startsWith("#")) {
 				// new citation block start
-				const label = row.replace("#", "").trim(); 
+				const label = row.replace("#", "").trim();
 				const citation = new Citation(label, this.settings);
-				
-				const inline = citation.parseRow("citation in text", notesRow, ">"); // required
+				const type = citation.parseRow("type", notesRow);
+				const inline = citation.parseRow("citation in text", notesRow);
 
-				let authors = [];
+				const authors = [];
 				while (notesRow[0].startsWith("-")) {
-					authors.push(citation.parseRow("author", notesRow, "-")); // required
-				}
-				const title = citation.parseRow("title", notesRow, ">"); // required
-				const format = citation.parseRow("format", notesRow, ">") // required, e.g. online
-				const publisherInfo = citation.parseRow("publisher info", notesRow, ">") // required, e.g. Miesto: vydavateľ, rok vydania 
-				const source = citation.parseRow("source", notesRow, ">"); // required
-				const date = citation.parseRow("date", notesRow, ">"); // required
-				const isbn = citation.parseRow("isbn", notesRow, ">", true); // required
-				const subTitle = citation.parseRow("subtitle", notesRow, ">", true); // optional
-				const edition = citation.parseRow("edition", notesRow, ">", true); // optional
-				const distribution = citation.parseRow("distribution", notesRow, ">", true) // optional
-
-				// check link source format
-				// do NOT allow (lorem ipsum)[https://foo.bar]
-				if (/\[.*\]\(.*?\)/.test(source)) {
-					new Notice(`${this.settings.literatureNote}:\nWrong link source format.\nFormat "(lorem ipsum)[https://foo.bar]" is not allowed.\n${source}`);
-					throw new Error(`${this.settings.literatureNote}:\nWrong link source format.\nFormat "(lorem ipsum)[https://foo.bar]" is not allowed.\n${source}`);
+					authors.push(citation.parseRow("author", notesRow, "-"));
 				}
 
-				citations.push({ 
+				const title = citation.parseRow("title", notesRow);
+
+				const commonParams = {
 					label,
-					inline, 
+					type,
+					inline,
 					authors,
-					title,
-					format,
-					publisherInfo,
-					source, 
-					date,
-					isbn,
-					subTitle,
-					edition,
-					distribution 
-				});
+					title
+				};
+
+				if (type.toLowerCase() === 'book') {
+					let citationBlock: BookCitationType = {...commonParams};
+
+					citationBlock["format"] = citation.parseRow("format", notesRow);
+					citationBlock["publishedPlace"] = citation.parseRow("published place", notesRow);
+					citationBlock["publisher"] = citation.parseRow("publisher", notesRow);
+					citationBlock["publishedYear"] = citation.parseRow("published year", notesRow);
+					citationBlock["edition"] = citation.parseRow("edition", notesRow);
+					citationBlock["isbn"] = citation.parseRow("isbn", notesRow); 
+					citationBlock["date"] = citation.parseRow("date", notesRow);
+					citationBlock["source"] = citation.parseRow("source", notesRow);
+					citations.push(citationBlock);
+				}
+				else if (type.toLocaleLowerCase() === 'web') {
+					let citationBlock: WebCitationType = {...commonParams};
+
+					citationBlock["webDomain"] = citation.parseRow("web domain", notesRow);
+					citationBlock["publishedPlace"] = citation.parseRow("published place", notesRow);
+					citationBlock["publisher"] = citation.parseRow("publisher", notesRow)
+					citationBlock["publishedDate"] = citation.parseRow("published date", notesRow);
+					citationBlock["revisionDate"] = citation.parseRow("revision date", notesRow);
+					citationBlock["date"] = citation.parseRow("date", notesRow);
+					citationBlock["source"] = citation.parseRow("source", notesRow);
+
+					citations.push(citationBlock);
+				} else {
+					// incorrectCitations.push(citation.parseRow("unknown", notesRow))
+				}
 			}
 		}
-		
+
 		return citations;
 	}
 
@@ -529,11 +541,11 @@ export class GenerateLatex {
 		citations = citations.sort((a, b) => a.label.localeCompare(b.label));
 
 		const citationString = citations.map(({
-			 label, inline, authors, 
-			 title, subTitle, date, 
-			 source, format, edition,
-			 publisherInfo, distribution
-		 }: CitationType) => {
+			label, inline, authors, 
+			title, date, 
+			source, format, edition,
+			publisherInfo, distribution
+		}: CitationType) => {
 			const transformedAuthors = authors.map((author: string) => {
 				// author is already defined in correct format (e.g. Lopusna, N. or Lopusna, J. N.,)
 				if (/\w+,\s*\w{1}\./.test(author))

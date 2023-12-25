@@ -6,7 +6,10 @@ import { TreeMenu } from './TreeMenu';
 import { Checkbox } from './Checkbox';
 import { SlidesModal } from './SlidesModal';
 import { Icon, ErrorIcon } from './Icon';
+import { CollapsibleCitation } from './Collapsible';
 
 export {
-	Button, BaseLink, Link, ToggleButton, SaveModal, TreeMenu, Checkbox, SlidesModal, Icon, ErrorIcon
+	Button, BaseLink, Link, ToggleButton, SaveModal,
+	TreeMenu, Checkbox, SlidesModal, Icon, ErrorIcon,
+	CollapsibleCitation
 }

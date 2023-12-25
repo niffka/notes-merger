@@ -23,18 +23,28 @@ export interface SlideType {
 }
 
 export interface CitationType {
-	authors: string[];
-	date: string;
-	distribution: string;
-	edition: string;
-	format: string;
+	label: string;
+	type: string; // book | web
 	inline: string;
-	isbn: string;
-	label: string; 
-	publisherInfo: string;
-	source: string;
-	subTitle: string;
+	authors: string[];
 	title: string;
+	format: string;
+	publishedPlace: string;
+	publisher: string;
+	date: string; // [cit. 1.1.2024]
+	source: string;
+}
+
+export interface WebCitationType extends CitationType {
+	webDomain: string;
+	publishedDate: string;
+	revisionDate: string;
+}
+
+export interface BookCitationType extends CitationType {
+	publishedYear: string;
+	edition: string;
+	isbn: string;
 }
 
 export interface LatexImageType {
