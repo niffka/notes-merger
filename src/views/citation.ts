@@ -16,6 +16,10 @@ export class Citation {
 
 		const row = (rows.shift() as string).replace(value, "").trim();
 
+		if (row.startsWith('#')) {
+			throw new Error("Error parsing citations.");
+		}
+
 		// skip optional row
 		if (row === "-")
 			return ""; 

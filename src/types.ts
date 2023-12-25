@@ -28,10 +28,9 @@ export interface CitationType {
 	inline: string;
 	authors: string[];
 	title: string;
-	format: string;
 	publishedPlace: string;
 	publisher: string;
-	date: string; // [cit. 1.1.2024]
+	date: string; // [cit. 11.11.2023]
 	source: string;
 }
 
@@ -45,12 +44,14 @@ export interface BookCitationType extends CitationType {
 	publishedYear: string;
 	edition: string;
 	isbn: string;
+	format: string;
 }
 
 export interface LatexImageType {
 	raw: string;
 	desc?: string;
 	name: string;
+	source?: string;
 	path: string;
 }
 
