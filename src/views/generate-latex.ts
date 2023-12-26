@@ -854,6 +854,8 @@ export class GenerateLatex {
 		latex = latex.replaceAll("_", "\\_");
 		latex = latex.replaceAll("#", "\\#");
 		latex = latex.replaceAll("%", "\\%");
+		latex = latex.replaceAll("$", "\\$");
+
 		return latex;
 	}
 
