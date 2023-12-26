@@ -1,4 +1,4 @@
-import { XCircle, Menu, createElement, IconNode } from 'lucide';
+import { XCircle, createElement, IconNode, AlertTriangle } from 'lucide';
 
 export class Icon {
 	element: SVGElement;
@@ -10,11 +10,20 @@ export class Icon {
 	}
 }
 
-export class ErrorIcon{
+export class ErrorIcon {
 	element: SVGElement;
 
-	constructor() {
-		this.element = new Icon(XCircle, "#c70c0f").element;
+	constructor(color = "#c70c0f") {
+		this.element = new Icon(XCircle, color).element;
+		return this;
+	}
+}
+
+export class WarningIcon {
+	element: SVGElement;
+
+	constructor(color = "#8c6f20") {
+		this.element = new Icon(AlertTriangle, color).element;
 		return this;
 	}
 }

@@ -22,30 +22,35 @@ If your plugin does not need CSS, delete this file.
 	border: 1px solid #343434;
 }
 
-.cont__title {
+.title {
 	font-weight: 600;
 	font-size: 32px;
 	text-decoration: none;
 }
 
-.cont__link-row {
+.link-row {
 	margin-top: 5px;
 }
 
-.cont__link-row button {
+.link-row button {
 	margin-right: 5px;
 	width: 5px;
     height: auto;
 }
 
-.cont__generate-md-note-btn {
+.generate-md-note-btn {
 	margin-top: 5px;
 }
 
-.cont__link-not-exist {
+.link-not-exist {
 	color: rgb(98, 78, 159);
+	text-decoration: none;
 }
 
+.link-incomplete {
+	color: #8c6f20;
+	margin-right: 5px;
+}
 
 /* pretty menu */
 .tree-menu ul {
@@ -119,6 +124,42 @@ If your plugin does not need CSS, delete this file.
 	margin-right: 10px;
     position: relative;
     top: 8px;
+}
+
+.warning-icon, .not-found-icon {
+	margin-left: 5px;
+	position: relative;
+    top: 7px;
+}
+
+/* Tooltip container */
+.tooltip-parent:hover .tooltip-container {
+	display: block;
+}
+
+.tooltip-container {
+	display: none;
+	position: absolute;
+	top: -15px;
+	left: 75px;
+
+	animation: pop-down 200ms forwards ease-in-out;
+    box-shadow: 0 2px 8px var(--background-modifier-box-shadow);
+    background-color: var(--background-modifier-message);
+    border-radius: var(--radius-s);
+    color: #FAFAFA;
+    font-size: var(--font-ui-smaller);
+    font-weight: var(--font-medium);
+    line-height: var(--line-height-tight);
+    max-width: 300px;
+    padding: 4px 8px;
+    text-align: center;
+    transform: translateX(-50%);
+    z-index: var(--layer-tooltip);
+    pointer-events: none;
+    white-space: pre-wrap;
+    word-break: normal;
+    overflow-wrap: anywhere;
 }
 
 h3 {

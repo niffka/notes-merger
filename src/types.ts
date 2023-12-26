@@ -11,6 +11,7 @@ export interface LinkTreeType {
 	order?: number;
 	path: string;
 	note: string;
+	incomplete: boolean;
 }
 
 export interface BuildLinkTreeType extends LinkTreeType{

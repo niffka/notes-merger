@@ -231,15 +231,15 @@ export class GenerateLatex {
 		}
 
 		new Button(this.structure, 'Generate', () => {
-			/*if (!metadata) {
-				new Notice(`Error: Metadata not loaded.\nCreate metadata note or set correct path in settings (Thesis template metadata note).`);
-				throw new Error("Error: Metadata not loaded.");
-			}
+			// if (!metadata) {
+			// 	new Notice(`Error: Metadata not loaded.\nCreate metadata note or set correct path in settings (Thesis template metadata note).`);
+			// 	throw new Error("Error: Metadata not loaded.");
+			// }
 
-			if (!literature) {
-				new Notice(`Error: Literature not loaded.\nCreate literature note or set correct path in settings (Literature note).`);
-				throw new Error("Error: Literature not loaded.");
-			} */
+			// if (!literature) {
+			// 	new Notice(`Error: Literature not loaded.\nCreate literature note or set correct path in settings (Literature note).`);
+			// 	throw new Error("Error: Literature not loaded.");
+			// } 
 
 			generateLatex.generate(images, insertThesisParts);
 		}, { cls: 'generate-final-btn'});
@@ -286,21 +286,17 @@ export class GenerateLatex {
 		if (images.incorrect.length > 0) {
 			new Notice(`Fix images format before generating Latex.`);
 			throw new Error("Fix images format before generating Latex.");
-		} 
+		}
 
 		if (!thesisParts) {
 			// plain thesis
-			
 			this.generateLatexFiles(latex);
 		} else {
 
 			// with template
-			// const latexCitations = this.fixLatexSpecialCharacters(this.createLatexCitations(this.literature.citations));
 			const latexCitations = this.createLatexCitations(this.literature.citations);
 
-			// const latexAttachments = this.attachments ? this.fixLatexSpecialCharacters(this.attachments.latex) : null;
 			const latexAttachments = this.attachments ? this.attachments?.latex : null;
-			
 
 			const thesis = this.template.composeThesis(thesisParts, latex, latexCitations, latexAttachments);
 
@@ -810,7 +806,7 @@ export class GenerateLatex {
 
 		const attachments = allFiles.filter(
 			(file: TFile) => file.path.includes(this.settings.attachmentsDir) && file?.extension === "md"
-		);
+		).sort((a, b) => a.name.localeCompare(b.name));
 
 		if (attachments.length <= 0)
 			return null;

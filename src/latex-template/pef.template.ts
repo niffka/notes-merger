@@ -21,6 +21,7 @@ export class PEFTemplate extends LatexTemplate {
 		'keywords-cs',
 		'thesis'
 	];
+	thesisParts: Record<string, boolean>;
 
 	allowedTypes = ["bachelor", "master", "dissertation", "scientific"];
 	settings: NotesMergerPluginSettingsType;
@@ -37,6 +38,7 @@ export class PEFTemplate extends LatexTemplate {
 		citations: string,
 		attachments: string | null
 	) {
+		this.thesisParts = thesisParts;
 		return `
 %####### Spočítání znaků s mezerami na Linuxu: 
 %####### $ pdftotext document.pdf -enc UTF-8 - | wc -m 
@@ -63,7 +65,7 @@ export class PEFTemplate extends LatexTemplate {
 % \\bakalarska % implicitní
 % \\diplomova
 % \\disertacni
-${thesisParts.metadata ? this.thesisType() : ''}
+${this.thesisType()}
 
 \\brokenpenalty 10000
 
@@ -81,12 +83,9 @@ ${this.keywords()}\n
 
 ${body}
 
-\\begin{literatura}
-${citations ? citations: ''}
-\\end{literatura}
+${thesisParts.citation && citations ? `\\begin{literatura}\n${citations}\n\\end{literatura}` : ''}
 
-\\prilohy
-${attachments ? attachments : ''}
+${thesisParts.attachment && attachments ? `\\prilohy\n${attachments}` : ''}
 
 \\end{document}
 `;
@@ -122,7 +121,7 @@ ${attachments ? attachments : ''}
 	}
 	
 	thesisType(): string {
-		if(!this.metadata?.thesis) 
+		if(!this.metadata?.thesis || !this.thesisParts.metadata) 
 			return `\\diplomova`; 
 
 		const { thesis } = this.metadata;
@@ -143,7 +142,7 @@ ${attachments ? attachments : ''}
 	}
 
 	title(): string {
-		if (!this.metadata || !Object.keys(this.metadata).length) {
+		if (!this.metadata || !Object.keys(this.metadata).length || !this.thesisParts.metadata) {
 			return '\\titul{}{}{}{}\n';
 		}
 		const { title, author, supervisor, locationAndDate} = this.metadata;
@@ -151,21 +150,21 @@ ${attachments ? attachments : ''}
 	}
 
 	acknowledgment(): string {
-		if (!this.metadata || !Object.keys(this.metadata).length) {
+		if (!this.metadata || !Object.keys(this.metadata).length || !this.thesisParts.metadata) {
 			return '\\podekovani{}\n';
 		}
 		return `\\podekovani{${this.metadata.acknowledgment}}\n`;
 	}
 
 	declaration(): string {
-		if (!this.metadata || !Object.keys(this.metadata).length) {
+		if (!this.metadata || !Object.keys(this.metadata).length || !this.thesisParts.metadata) {
 			return `\\prohlasenimuz{} \\today}\n`;
 		}
 		return `\\prohlasenimuz{${this.metadata.declaration} \\today}\n`;
 	}
 
 	abstract(): string {
-		if (!this.metadata || !Object.keys(this.metadata).length) {
+		if (!this.metadata || !Object.keys(this.metadata).length || !this.thesisParts.metadata) {
 			return (
 				`\\abstract{}\n` +
 				`{}\n\n` + 
@@ -182,7 +181,7 @@ ${attachments ? attachments : ''}
 	}
 
 	keywords(): string {
-		if (!this.metadata || !Object.keys(this.metadata).length) {
+		if (!this.metadata || !Object.keys(this.metadata).length || !this.thesisParts.metadata) {
 			return (
 				`\\klslova{}\n` + 
 				`\\keywords{}\n`

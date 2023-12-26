@@ -1,5 +1,9 @@
 import { App } from "obsidian";
 import { LinkTreeType } from "src/types";
+import {
+	WarningIcon,
+	ErrorIcon
+} from '../components/index';
 
 export class BaseLink {
 	context: App;
@@ -15,7 +19,7 @@ export class BaseLink {
 	}
 
 	render() {
-		const hrefTitle = this.element.createEl('a', { text: this.name, cls: 'cont__title' });
+		const hrefTitle = this.element.createEl('a', { text: this.name, cls: 'title' });
 		hrefTitle.onclick = () => {
 			this.context.workspace.openLinkText(this.name, "");
 		}
@@ -45,11 +49,31 @@ export class Link {
 
 	render(state: boolean) {
 		this.a = this.element.createEl('a', { text: this.link.name, cls: "link" });
-		!this.link.exists && this.a.addClass("cont__link-not-exist");
+
+		if (!this.link.exists) {
+			this.a.createEl('span', { 
+				cls: 'tooltip-container', 
+				text: 'Warning: Note doesn\'t exist.'
+			});
+
+			this.a.addClass("link-not-exist");
+			this.a.createEl('i', { cls: 'not-found-icon'}).appendChild(new ErrorIcon('#624e9f').element);
+			this.a.addClass('tooltip-parent');
+		} else if (this.link.incomplete) {
+			this.a.createEl('span', { 
+				cls: 'tooltip-container', 
+				text: 'Warning: Note is incomplete.'
+			});
+
+			this.a.addClass("link-incomplete");
+			this.a.createEl('i', { cls: 'warning-icon'}).appendChild(new WarningIcon().element);
+			this.a.addClass('tooltip-parent');
+
+		}
 		this.link.inline && this.a.addClass("inline");
 		this.a.onclick = () => {
-			this.context.workspace.openLinkText(this.link.name, "");
-			!this.link.exists && this.a.removeClass("cont__link-not-exist");
+			this.context.workspace.openLinkText(this.link.path, "");
+			!this.link.exists && this.a.removeClass("link-not-exist");
 		};
 
 		this.toggle(state);

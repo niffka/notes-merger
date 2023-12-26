@@ -113,7 +113,7 @@ export class GenerateMarkdown {
 				return false;
 			}
 
-			let isInline = true;			
+			let isInline = true;
 			if (text.includes(this.settings.listOfLinksKeyword)) {
 				let [inlineText, linksText] = text.split(this.settings.listOfLinksKeyword);
 				if (!inlineText.includes(`[[${cl}]]`)){
@@ -132,12 +132,13 @@ export class GenerateMarkdown {
 
 			return {
 				name: cl,
-				exists: !!note,	
+				exists: !!note,
 				inline: isInline,
 				index: isIndex,
 				path: note?.path
 			};
 		}).filter(Boolean);
+
 
 		return existingNotes as LinkTreeType[];
 	}
@@ -296,6 +297,7 @@ export class GenerateMarkdown {
 			let note = await getNoteByName(this.app, link.path)
 			const subLinks = this.parseLinks(note);
 
+			const incomplete = (note.length <= 160 && !note.includes(this.settings.listOfLinksKeyword)) ? true : false;
 			this.maxLevel = level + 1;
 
 			if (note.includes(this.settings.listOfLinksKeyword)) {
@@ -303,7 +305,7 @@ export class GenerateMarkdown {
 				note = importantPart.trim();
 			}
 
-			(titleMapping as any)[link.name] = { ...link, parentRef, level: this.maxLevel, order, note};
+			(titleMapping as any)[link.name] = { ...link, parentRef, level: this.maxLevel, order, note, incomplete };
 
 			if (links.length > 0)
 				await this.createParentStructure(subLinks, this.maxLevel, processed, (titleMapping as any)[link.name], titleMapping);
