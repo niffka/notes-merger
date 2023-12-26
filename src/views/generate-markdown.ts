@@ -71,7 +71,7 @@ export class GenerateMarkdown {
 			this.ignoredLinks = ignoredLinks;
 		});
 
-		new Button(this.subbar, 'Generate markdown', () => {
+		new Button(this.subbar, 'Generate Markdown', () => {
 			
 			// cleanup
 			this.markdown = "";
@@ -79,7 +79,7 @@ export class GenerateMarkdown {
 			this.generateMarkdownFile(this.linksTree, activeNoteText);
 		}, { cls: 'generate-markdown-btn'});
 
-		new Button(this.subbar, 'Generate slideshow', () => {
+		new Button(this.subbar, 'Generate Slideshow', () => {
 			new SlidesModal(this.app, this.linksTree, this.ignoredLinks, (slides: SlideType[], hasTitleSlide: boolean, hasLastSlide: boolean) => {
 				const slidesMD = new SlidesMarkdown(slides, title, hasTitleSlide, hasLastSlide);
 

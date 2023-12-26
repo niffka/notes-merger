@@ -231,7 +231,7 @@ export class GenerateLatex {
 		}
 
 		new Button(this.structure, 'Generate', () => {
-			if (!metadata) {
+			/*if (!metadata) {
 				new Notice(`Error: Metadata not loaded.\nCreate metadata note or set correct path in settings (Thesis template metadata note).`);
 				throw new Error("Error: Metadata not loaded.");
 			}
@@ -239,7 +239,7 @@ export class GenerateLatex {
 			if (!literature) {
 				new Notice(`Error: Literature not loaded.\nCreate literature note or set correct path in settings (Literature note).`);
 				throw new Error("Error: Literature not loaded.");
-			} 
+			} */
 
 			generateLatex.generate(images, insertThesisParts);
 		}, { cls: 'generate-final-btn'});

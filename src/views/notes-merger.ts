@@ -59,7 +59,7 @@ export class NotesMerger extends ItemView {
 
 		this.structure = this.container.createEl('div');
 
-		new Button(this.generateMarkdownTabParent, 'Generate merging preview', () => {
+		new Button(this.generateMarkdownTabParent, 'Generate Merging Preview', () => {
 			// empty state
 			
 			this.structure.empty();
@@ -70,7 +70,7 @@ export class NotesMerger extends ItemView {
 			generateMarkdown.readSelectedNote();
 		});
 
-		new Button(this.generateLatexTabParent, 'Generate latex', async () => {
+		new Button(this.generateLatexTabParent, 'Generate Latex', async () => {
 			this.subbar.empty();
 
 			new Button(this.subbar, 'Generate Plain Latex', () => {

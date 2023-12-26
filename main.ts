@@ -18,8 +18,8 @@ const DEFAULT_SETTINGS: NotesMergerPluginSettingsType = {
 	insertIndexNote: false,
 	removeStatusTag: true,
 	metadataNote: 'Metadata',
-	latexImagesDirectoryName: 'obrazky',
-	attachmentsDir: 'prilohy'
+	latexImagesDirectoryName: 'images',
+	attachmentsDir: 'attachments'
 }
 
 export default class NotesMergerPlugin extends Plugin {
@@ -35,7 +35,7 @@ export default class NotesMergerPlugin extends Plugin {
 			(leaf) => new NotesMerger(leaf, this.settings)
 		);
 		
-		this.addRibbonIcon("scroll", "NotesMerger", () => {
+		this.addRibbonIcon("scroll", "Notes Merger", () => {
 			this.activateNotesMergerView();
 		});
 
@@ -91,23 +91,14 @@ class NotesMergerPluginSettingTab extends PluginSettingTab {
 			.setName('List of links keyword')
 			.setDesc('Keyword to detect list of links to be subchapters at the end of note.')
 			.addText(text => text
-				.setPlaceholder('Defaults to "Kam dál"')
+				.setPlaceholder('Defaults to "Next"')
 				.setValue(this.plugin.settings.listOfLinksKeyword)
 				.onChange(async (value) => {
 					this.plugin.settings.listOfLinksKeyword = value;
 					await this.plugin.saveSettings();
 				}));
 
-		new Setting(containerEl)
-		.setName('Literature note')
-		.setDesc('Name of the note with citations.')
-		.addText(text => text
-			.setPlaceholder('Defaults to "Literature"')
-			.setValue(this.plugin.settings.literatureNote)
-			.onChange(async (value) => {
-				this.plugin.settings.literatureNote = value;
-				await this.plugin.saveSettings();
-			}));
+		
 
 		new Setting(containerEl)
 		.setName('Include generated preview')
@@ -122,7 +113,7 @@ class NotesMergerPluginSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 		.setName('Include index note')
-		.setDesc('Insert index note at the beginning of the merged note.')
+		.setDesc('Insert index note text at the beginning of the merged note.')
 		.addToggle(toggle => toggle
 			.setValue(this.plugin.settings.insertIndexNote)
 			.onChange(async value => {
@@ -144,10 +135,21 @@ class NotesMergerPluginSettingTab extends PluginSettingTab {
 		);
 
 		new Setting(containerEl)
-		.setName('Thesis template metadata note')
+		.setName('Literature note')
+		.setDesc('Name of the note with citations.')
+		.addText(text => text
+			.setPlaceholder('Defaults to "Literature"')
+			.setValue(this.plugin.settings.literatureNote)
+			.onChange(async (value) => {
+				this.plugin.settings.literatureNote = value;
+				await this.plugin.saveSettings();
+			}));
+
+		new Setting(containerEl)
+		.setName('Metadata note')
 		.setDesc('Name of the note that contains metadata. Note should include title, acknowledgements, abstract (czech, english), keywords (czech, english), declaration.')
 		.addText(text => text
-			.setPlaceholder(`Defaults to "${this.plugin.settings.metadataNote}"`)
+			.setPlaceholder(`Defaults to "Metadata"`)
 			.setValue(this.plugin.settings.metadataNote)
 			.onChange(async (value) => {
 				this.plugin.settings.metadataNote = value;
@@ -158,7 +160,7 @@ class NotesMergerPluginSettingTab extends PluginSettingTab {
 		.setName('Name of image folder inside generated latex folder')
 		.setDesc('Includes images found in markdown.')
 		.addText(text => text
-			.setPlaceholder(`Defaults to "${this.plugin.settings.latexImagesDirectoryName}"`)
+			.setPlaceholder(`Defaults to "images"`)
 			.setValue(this.plugin.settings.latexImagesDirectoryName)
 			.onChange(async (value) => {
 				this.plugin.settings.latexImagesDirectoryName = value;
@@ -169,12 +171,13 @@ class NotesMergerPluginSettingTab extends PluginSettingTab {
 		.setName('Attachments')
 		.setDesc('Path to attachments folder. One note per one attachment.')
 		.addText(text => text
-			.setPlaceholder(`Defaults to "${this.plugin.settings.attachmentsDir}"`)
+			.setPlaceholder(`Defaults to "attachments"`)
 			.setValue(this.plugin.settings.attachmentsDir)
 			.onChange(async (value) => {
 				this.plugin.settings.attachmentsDir = value;
 				await this.plugin.saveSettings();
 			}));
 
+		
 	}
 }
