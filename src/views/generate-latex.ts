@@ -231,10 +231,10 @@ export class GenerateLatex {
 		}
 
 		new Button(this.structure, 'Generate', () => {
-			// if (!metadata) {
-			// 	new Notice(`Error: Metadata not loaded.\nCreate metadata note or set correct path in settings (Thesis template metadata note).`);
-			// 	throw new Error("Error: Metadata not loaded.");
-			// }
+			if (!metadata) {
+				new Notice(`Error: Metadata not loaded.\nCreate metadata note or set correct path in settings (Thesis template metadata note).`);
+				throw new Error("Error: Metadata not loaded.");
+			}
 
 			if (!literature) {
 				new Notice(`Error: Literature not loaded.\nCreate literature note or set correct path in settings (Literature note).`);
@@ -295,9 +295,14 @@ export class GenerateLatex {
 		} else {
 
 			// with template
+			// const latexCitations = this.fixLatexSpecialCharacters(this.createLatexCitations(this.literature.citations));
 			const latexCitations = this.createLatexCitations(this.literature.citations);
 
-			const thesis = this.template.composeThesis(thesisParts, latex, latexCitations, this.attachments);
+			// const latexAttachments = this.attachments ? this.fixLatexSpecialCharacters(this.attachments.latex) : null;
+			const latexAttachments = this.attachments ? this.attachments?.latex : null;
+			
+
+			const thesis = this.template.composeThesis(thesisParts, latex, latexCitations, latexAttachments);
 
 			this.generateLatexFiles(thesis, false);
 		}
@@ -323,7 +328,6 @@ export class GenerateLatex {
 		latex = this.refImage(latex);
 		latex = this.removeMarkdownLeftovers(latex);
 		latex = this.basicRef(latex); 
-		latex = this.fixLatexSpecialCharacters(latex);
 		
 		return latex;
 	}
@@ -392,7 +396,7 @@ export class GenerateLatex {
 			const level = transformHeadings[depth];
 			heading = `\\${level}{${headingValue}}`; 
 		} else {
-			heading = `\\textbf{${headingValue}}`
+			heading = `\\subsubsection*{${headingValue}}`;
 		}
 
 		return heading;
@@ -415,7 +419,7 @@ export class GenerateLatex {
 				return this.inlineCode(ast);
 			}
 
-			return ast.value;
+			return this.fixLatexSpecialCharacters(ast.value);
 		}
 
 		if (ast.type == "heading") {
@@ -438,7 +442,8 @@ export class GenerateLatex {
 			this.images.push(ast);
 			return (
 				`\\obrazek\n\\vlozobrbox{${ast.url}}{1.0\\textwidth}{!}\n` +
-				`\\endobrl{${ast.alt}${ast?.title ? ` \\obrzdroj{${ast.title}}` : ''}}\n{${ast.url}}`
+				`\\endobrl{${ast?.alt ? `${this.fixLatexSpecialCharacters(ast?.alt)}`: ''}` +
+				`${ast?.title ? ` \\obrzdroj{${this.fixLatexSpecialCharacters(ast.title)}}` : ''}}\n{${ast.url}}`
 			)
 		} 
 
@@ -591,7 +596,7 @@ export class GenerateLatex {
 				return `\\citace{${label}}{${inline}}{\n\\autor{${authors.join(', ')}}\n`
 					+ `\\nazev{${title}.}${format && ` [${format}].`} ${publishedPlace}: ${publisher && `${publisher}, `}`
 					+ `${publishedYear && ` ${publishedYear}. `}${edition && ` ${edition}.`}${isbn && ` ${isbn}.`}`
-					+ ` [${date}].${source && ` Dostupné z: ${source}.`}}`;
+					+ ` [${date}].${source && ` Dostupné z: ${this.fixLatexSpecialCharacters(source)}`}}`;
 
 			} else if (citation.type.toLowerCase() === 'web') {
 				const { 
@@ -605,7 +610,7 @@ export class GenerateLatex {
 				+ `\\nazev{${title && `${title}.`}${webDomain && `${webDomain}`}} [online].`
 				+ `${publishedPlace && `${publishedPlace}: `}${publisher && `${publisher}, `}`
 				+ `${publishedDate && `${publishedDate}, `}${revisionDate && `${revisionDate} `}`
-				+ `\n[${date}].${source && ` Dostupné z: ${source}.`}}`;
+				+ `\n[${date}].${source && ` Dostupné z: ${this.fixLatexSpecialCharacters(source)}`}}`;
 			}
 
 		}).join("\n\n");
@@ -707,7 +712,6 @@ export class GenerateLatex {
 	}
 
 	code(ast: Code) {
-
 		const metadata: Record<string, null | string> = {
 			label: null,
 			cite: null
@@ -733,7 +737,7 @@ export class GenerateLatex {
 	}
 
 	inlineCode(ast: InlineCode) {
-		return `\\[ ${ast.value} \\]`
+		return `\\[ ${this.fixLatexSpecialCharacters(ast.value)} \\]`
 	}
 
 	removeMarkdownLeftovers(latex: string) {
@@ -755,18 +759,7 @@ export class GenerateLatex {
 		const possibleRefs = [...latex.matchAll(/\[(\w+)\]/g)];
 
 		possibleRefs.forEach(([raw, clean]) => {
-			// const [ match ] = this.images.filter((img: any) => img.name === clean);
-			
 			latex = latex.replace(raw, `\\ref{${clean}}`);
-			// if (match) {
-			// } else {
-			// 	this.errors.push({ type: 'basic_ref', item: [raw, clean], message: `Reference to '${clean}' ('${raw}') not found.` })
-			// }
-			
-			// compare clean with images array and
-			//  get id from images
-			// then make \ref{id}
-			// this.note = this.note.replace(raw, `\\ref{${clean}}`);
 		});
 
 		return latex;

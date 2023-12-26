@@ -35,7 +35,7 @@ export class PEFTemplate extends LatexTemplate {
 		thesisParts: Record<string, boolean>,
 		body: string,
 		citations: string,
-		attachments: AttachmentsType | null
+		attachments: string | null
 	) {
 		return `
 %####### Spočítání znaků s mezerami na Linuxu: 
@@ -59,7 +59,7 @@ export class PEFTemplate extends LatexTemplate {
 % \\popisky % implicitní 
 \\pagestyle{headings} % implicitní
 
-\\cislovat{4}
+\\cislovat{2}
 % \\bakalarska % implicitní
 % \\diplomova
 % \\disertacni
@@ -86,7 +86,7 @@ ${citations ? citations: ''}
 \\end{literatura}
 
 \\prilohy
-${attachments ? attachments.latex : ''}
+${attachments ? attachments : ''}
 
 \\end{document}
 `;
