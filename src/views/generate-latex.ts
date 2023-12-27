@@ -309,7 +309,7 @@ export class GenerateLatex {
 		const root: Root = fromMarkdown(note);
 
 		let latex = root.children.map((child: RootContent) => {
-			const result = this.wrapper(child, 0);
+			const result = this.node(child, 0);
 
 			// if tag, exlude it
 			if (result && result.startsWith("#"))
@@ -325,6 +325,9 @@ export class GenerateLatex {
 		latex = this.removeMarkdownLeftovers(latex);
 		latex = this.basicRef(latex); 
 		
+		// @ts-ignore
+		// latex = latex.replaceAll("#", "\\#");
+
 		return latex;
 	}
 
@@ -398,9 +401,7 @@ export class GenerateLatex {
 		return heading;
 	}
 
-	// add inline code \verb|inline code text|
-	// code block \begin{lstlisting}[...] ... \end{lstlisting}
-	wrapper(ast: RootContent, indent: number = 0): any {
+	node(ast: RootContent, indent: number = 0): any {
 		if ('value' in ast) {
 			// it must be a table
 			if (ast.type == 'text' && ast.value.split("|").length >= 5) {
@@ -425,11 +426,11 @@ export class GenerateLatex {
 		if(ast.type == "list") {
 			if (ast.ordered) {
 				return ("\t".repeat(indent) + "\\begin{enumerate}\n" + 
-					ast.children.map(sub => this.wrapper(sub, indent + 1)).join("\n") + 
+					ast.children.map(sub => this.node(sub, indent + 1)).join("\n") + 
 				"\n" + "\t".repeat(indent) + "\\end{enumerate}\n");	
 			} else {
 				return ("\\begin{itemize}\n" + 
-					ast.children.map(sub => this.wrapper(sub, indent + 1)).join("\n") + 
+					ast.children.map(sub => this.node(sub, indent + 1)).join("\n") + 
 				"\n\\end{itemize}\n");	
 			}
 		}
@@ -447,23 +448,23 @@ export class GenerateLatex {
 			return (ast as Parent).children.map((child) => {
 
 				if (ast.type == "paragraph") {
-					return this.wrapper(child);
+					return this.node(child);
 				}
 		
 				if (ast.type == "strong") {
-					return "\\textbf{" + this.wrapper(child) + "}";
+					return "\\textbf{" + this.node(child) + "}";
 				}
 		
 				if (ast.type == "emphasis") {
-					return "{\\it " + this.wrapper(child) + "}";
+					return "{\\it " + this.node(child) + "}";
 				}
 
 				if (ast.type == "listItem") {
 					// start of sublist, dont insert "\item"
 					if (child.type == "list") 
-						return "\n" + this.wrapper(child, indent);
+						return "\n" + this.node(child, indent);
 
-					return "\t".repeat(indent) + "\\item " + this.wrapper(child, indent);
+					return "\t".repeat(indent) + "\\item " + this.node(child, indent);
 				}
 			}).join("");
 		} catch (error) {
@@ -477,7 +478,7 @@ export class GenerateLatex {
 	}
 
 	refCite(latex: string) { 
-		const links = [...latex.matchAll(/\[\[.+?#(\w+)\]\]/g)];
+		const links = [...latex.matchAll(/\[\[.+#(\w+)\]\]/g)];
 		links.forEach(([raw, clean]: [string, string]) => {
 			latex = latex.replace(raw, `\\cite{${clean}}`);
 		});
@@ -848,7 +849,6 @@ export class GenerateLatex {
 	// special characters: %, #, _
 	fixLatexSpecialCharacters(latex: string) {
 		latex = latex.replaceAll("_", "\\_");
-		latex = latex.replaceAll("#", "\\#");
 		latex = latex.replaceAll("%", "\\%");
 		latex = latex.replaceAll("$", "\\$");
 
