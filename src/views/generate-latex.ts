@@ -102,7 +102,7 @@ export class GenerateLatex {
 
 		this.imageLatexStatus(images);
 
-		new Button(this.structure, 'Generate', () => {
+		new Button(this.structure, 'Generate LaTeX', () => {
 			generateLatex.generate(images);
 		}, { cls: 'generate-final-btn'});
 	}

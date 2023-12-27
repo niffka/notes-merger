@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as Path from 'path';
 import { SlideType } from "src/types";
-import { title, last, basic, image, split } from 'src/slideshow-template/default';
+import { tpl_con_title, tpl_con_last, tpl_con_basic, tpl_con_image, tpl_con_split } from 'src/slideshow-template/default';
 export class SlidesMarkdown {
 
 	slides: SlideType[] = [];
@@ -40,7 +40,7 @@ export class SlidesMarkdown {
 	}
 
 	createTitleSlide(title: string) {
-		return `\n<!-- slide template="[[tpl-con-title]]" -->\n\n` +
+		return `\n<!-- slide template="[[tpl_con_title]]" -->\n\n` +
 				`::: title\n\n` + 
 				`## _${title}_\n` +
 				`:::\n\n` +
@@ -51,13 +51,13 @@ export class SlidesMarkdown {
 
 	createLastSlide() {
 		return `\n---\n` +
-			`<!-- slide template="[[tpl-con-last]]" -->\n\n` +
+			`<!-- slide template="[[tpl_con_last]]" -->\n\n` +
 			`#### _Ďakujem za pozornosť_\n\n`;
 	}
 
 	createBasicSlide(name: string) {
 		return `\n---\n` + 
-			`<!-- slide template="[[tpl-con-basic]]" -->\n\n` +
+			`<!-- slide template="[[tpl_con_basic]]" -->\n\n` +
 			`::: title\n` +
 			`### _**${name}**_\n` +
 			`:::\n\n` +
@@ -70,7 +70,7 @@ export class SlidesMarkdown {
 
 	createImageSlide(name: string) {
 		return `\n---\n` + 
-		`<!-- slide template="[[tpl-con-image]]" -->\n\n` +
+		`<!-- slide template="[[tpl_con_image]]" -->\n\n` +
 
 		`::: title\n`+
 		`### _**${name}**_\n`+
@@ -87,7 +87,7 @@ export class SlidesMarkdown {
 
 	createSplitSlide(name: string) {
 		return `\n---\n` + 
-			`<!-- slide template="[[tpl-con-split]]" -->\n\n` +
+			`<!-- slide template="[[tpl_con_split]]" -->\n\n` +
 			`::: title\n` + 
 			`### _**${name}**_\n` +
 			`:::\n\n` + 
@@ -114,7 +114,7 @@ export class SlidesMarkdown {
 		if (!fs.existsSync(vaultPath))
 			fs.mkdirSync(vaultPath);
 
-		const templates: Record<string, string> = {title, last, basic, image, split};
+		const templates: Record<string, string> = {tpl_con_title, tpl_con_last, tpl_con_basic, tpl_con_image, tpl_con_split};
 
 		Object.keys(templates).forEach((templateName: string) => {
 			fs.writeFileSync(Path.join(vaultPath, `${templateName}.md`), templates[templateName]);

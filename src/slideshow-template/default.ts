@@ -1,4 +1,4 @@
-export const title = `
+export const tpl_con_title = `
 <grid drag="100 100" drop="0 0" flow="col" align="bottom">
 <% source %>
 </grid>
@@ -19,7 +19,7 @@ border-bottom: 2px dotted gray;
 <grid drag="94 0" drop="3 -8" class="horizontal_dotted_line">
 </grid>`;
 
-export const last = `
+export const tpl_con_last = `
 <grid drag="100 100" drop="top" >
 <% content %>
 </grid>
@@ -34,7 +34,7 @@ export const last = `
 <grid drag="94 0" drop="3 -8" class="horizontal_dotted_line">
 </grid>`;
 
-export const basic = `
+export const tpl_con_basic = `
 <grid drag="100 10" drop="top" bg="white" align="left" pad="0 20px">
  <% title %>
 </grid>
@@ -59,7 +59,7 @@ export const basic = `
 <%? source %>
 </grid>`;
 
-export const image = `
+export const tpl_con_image = `
 <grid drag="100 10" drop="top" bg="white" align="left" pad="0 20px">
  <% title %>
 </grid>
@@ -84,7 +84,7 @@ export const image = `
 <grid drag="94 0" drop="3 -6" class="horizontal_dotted_line">
 </grid>`;
 
-export const split = `
+export const tpl_con_split = `
 <grid drag="100 10" drop="top" bg="white" align="left" pad="0 20px">
  <% title %>
 </grid>
