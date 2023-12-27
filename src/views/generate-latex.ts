@@ -230,7 +230,7 @@ export class GenerateLatex {
 			this.structure.createEl('div', { text: 'Attachments not loaded.'})
 		}
 
-		new Button(this.structure, 'Generate', () => {
+		new Button(this.structure, 'Generate LaTeX', () => {
 			// if (!metadata) {
 			// 	new Notice(`Error: Metadata not loaded.\nCreate metadata note or set correct path in settings (Thesis template metadata note).`);
 			// 	throw new Error("Error: Metadata not loaded.");

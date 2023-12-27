@@ -46,7 +46,7 @@ export class SaveModal extends Modal {
 	new Setting(contentEl)
 	.addButton((btn) =>
 		btn
-		.setButtonText("Generate note")
+		.setButtonText("Generate")
 		.setCta()
 		.onClick(() => {
 			this.close();
