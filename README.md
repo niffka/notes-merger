@@ -86,12 +86,14 @@ row2 & col3 & col4 \\ \hline
 
 ### Codeblock
 #### Markdown
-```json packageFile|This is package.json file
-{
-	
-	"name": "notes-merger",
-    ...
-}
+```
+	```json packageFile|This is package.json file
+	{
+		
+		"name": "notes-merger",
+		...
+	}
+```
 ```
 optional metadata: `language label|caption` (e.g. )
 
@@ -107,10 +109,14 @@ optional metadata: `language label|caption` (e.g. )
 ### Inline Code
 
 #### Markdown
+```
 `const foo = "bar"`
+```
 
 #### Latex
-`\[ const foo = "bar" \]`
+```
+\[ const foo = "bar" \]
+```
 
 
 ### Image
@@ -134,10 +140,14 @@ optional: description, source
 ### Reference an Image
 Reference image in text.
 #### Markdown
-`Black cat is crossing street on picture [blackcat.jpg].`
+```
+Black cat is crossing street on picture [blackcat.jpg].
+```
 
 #### Latex
-`Black cat is crossing street on picture \ref{blackcat.jpg}.`
+```
+Black cat is crossing street on picture \ref{blackcat.jpg}.
+```
 
 ### Citation: Literature file
 Citation is created from special file specified in settings (default: Literature)
@@ -214,7 +224,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit
 ```
 Lorem ipsum dolor sit amet, consectetur adipiscing elit \cite{label}.
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit  \cite{GTD}.
+Lorem ipsum dolor sit amet, consectetur adipiscing elit \cite{GTD}.
 ```
 
 ### Multiple citations
@@ -273,14 +283,22 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit \cite{literatureNote#lab
 
 ### Bold
 #### Markdown
-**bold text***
+```
+**bold text**
+```
 
 #### Latex
-`\textbf{bold text}`
+```
+\textbf{bold text}
+```
 
 ### Italic
 #### Markdown
+```
 *italic*
+```
 
 #### Latex
-`{\it italic}`
+```
+{\it italic}
+```
