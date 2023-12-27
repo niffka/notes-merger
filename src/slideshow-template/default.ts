@@ -1,32 +1,117 @@
-export const title = `<!-- slide bg="white" -->
-<grid drag="100 55" drop="top" align="stretch">
-![[Title-Wide.png]]
+export const title = `
+<grid drag="100 100" drop="0 0" flow="col" align="bottom">
+<% source %>
 </grid>
 
-<grid drag="100 25" drop="0 70" flow="col" align="stretch">
+<grid drag="90 10" drop="5 40"  align="centre" pad="0 20px">
+<% title %>
+</grid>
 
 <% content %>
 
-</grid>
+<style>
+.horizontal_dotted_line{
+border-bottom: 2px dotted gray;
+} 
+} 
+</style>
 
-
-<grid drag="100 6" drop="bottom">
-###### © 2022 Lernende Organisation<!-- element style="font-weight:300" -->
-</grid>
-`;
+<grid drag="94 0" drop="3 -8" class="horizontal_dotted_line">
+</grid>`;
 
 export const last = `
-TBD last temp slide
-`;
+<grid drag="100 100" drop="top" >
+<% content %>
+</grid>
+
+<style>
+.horizontal_dotted_line{
+  border-bottom: 2px dotted gray;
+} 
+} 
+</style>
+
+<grid drag="94 0" drop="3 -8" class="horizontal_dotted_line">
+</grid>`;
 
 export const basic = `
-TBD basic slide template
-`;
+<grid drag="100 10" drop="top" bg="white" align="left" pad="0 20px">
+ <% title %>
+</grid>
+
+<grid drag="94 70" drop="3 15" bg="white" style="border-radius:15px"/>
+
+<grid drag="90 66" drop="5 17" align="topleft">
+<% content %>
+</grid>
+
+<style>
+.horizontal_dotted_line{
+  border-bottom: 2px dotted gray;
+} 
+} 
+</style>
+
+<grid drag="94 0" drop="3 -6" class="horizontal_dotted_line">
+</grid>
+
+<grid drag="100 30" drop="0 64" align="bottomleft" pad="0 30px" >
+<%? source %>
+</grid>`;
 
 export const image = `
-TBD image slide template
-`;
+<grid drag="100 10" drop="top" bg="white" align="left" pad="0 20px">
+ <% title %>
+</grid>
+
+<grid drag="90 75" drop="5 12"  align="centre">
+<% middle %>
+</grid>
+
+<grid drag="90 5" drop="5 -6"  align="centre">
+<%? source %>
+</grid>
+
+<% content %>
+
+<style>
+.horizontal_dotted_line{
+  border-bottom: 2px dotted gray;
+} 
+} 
+</style>
+
+<grid drag="94 0" drop="3 -6" class="horizontal_dotted_line">
+</grid>`;
 
 export const split = `
-TBD split slide template
-`;
+<grid drag="100 10" drop="top" bg="white" align="left" pad="0 20px">
+ <% title %>
+</grid>
+
+<grid drag="37 75" drop="3 15" bg="white" style="border-radius:15px"/>
+
+<grid drag="35 71" drop="4 17" align="topleft">
+<% left %>
+</grid>
+
+
+<grid drag="57 75" drop="41 15" align="centre">
+<% right %>
+</grid>
+
+<grid drag="54 4" drop="-3 -6"  align="centre">
+<%? source %>
+</grid>
+
+<% content %>
+
+<style>
+.horizontal_dotted_line{
+  border-bottom: 2px dotted gray;
+} 
+} 
+</style>
+
+<grid drag="94 0" drop="3 -6" class="horizontal_dotted_line">
+</grid>`;

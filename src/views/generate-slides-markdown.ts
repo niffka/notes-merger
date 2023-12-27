@@ -40,7 +40,7 @@ export class SlidesMarkdown {
 	}
 
 	createTitleSlide(title: string) {
-		return `\n<!-- slide template="[[tpl-con-title-first]]" -->\n\n` +
+		return `\n<!-- slide template="[[tpl-con-title]]" -->\n\n` +
 				`::: title\n\n` + 
 				`## _${title}_\n` +
 				`:::\n\n` +
@@ -51,13 +51,13 @@ export class SlidesMarkdown {
 
 	createLastSlide() {
 		return `\n---\n` +
-			`<!-- slide template="[[tpl-con-end]]" -->\n\n` +
+			`<!-- slide template="[[tpl-con-last]]" -->\n\n` +
 			`#### _Ďakujem za pozornosť_\n\n`;
 	}
 
 	createBasicSlide(name: string) {
 		return `\n---\n` + 
-			`<!-- slide template="[[tpl-con-default]]" -->\n\n` +
+			`<!-- slide template="[[tpl-con-basic]]" -->\n\n` +
 			`::: title\n` +
 			`### _**${name}**_\n` +
 			`:::\n\n` +
