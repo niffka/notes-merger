@@ -39,3 +39,26 @@ TBA
 ## Settings
 Default settings: 
 ![default notes merger settings](https://github.com/niffka/notes-merger/blob/dev/src/images/default_settings.png)
+
+
+# Markdown syntax translation to Latex
+## Markdown
+### Codeblock
+md:
+```json packageFile|This is package.json file
+{
+	
+	"name": "notes-merger",
+    ...
+}
+```
+metadata: `language label|caption` (e.g. )
+
+### Latex
+```
+\begin{lstlisting}[language=json, caption=This is package.json file, label={packageFile}]
+{
+	"name": "notes-merger",
+}
+\end{lstlisting}
+```
