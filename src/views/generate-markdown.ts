@@ -233,10 +233,10 @@ export class GenerateMarkdown {
 			
 		}, '');
 
-		// replace any titles in local note to bold 
+		// replace any titles in local note to h6 
 		const localHeading = note.matchAll(/#+\s+(.*)\n/g);
 		[...localHeading].forEach(([raw, cl]: [string, string]) => {
-			note = note.replace(raw, `**${cl.trim()}**\n`)
+			note = note.replace(raw, `###### ${cl.trim()}\n`)
 		});
 		return note.trim();
 	}

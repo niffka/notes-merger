@@ -173,24 +173,28 @@ export class GenerateLatex {
 		this.structure.createEl('h3', { 
 			text: 'Literature' + (literature.citations.length ? ` (${literature.citations.length})` : '')
 		});
-		if (literature.citations.length) {
+
+		if (this.literatureNote) {
 			let contentEl: Element;
-			insertWithCheckbox(this.structure, 'literature', (state) => {
-				applyStateClass(contentEl, !state);
-			});
-			contentEl = this.structure.createEl('div')
-			literature.citations.forEach((lit: CitationType) => {
-				const litEl = contentEl.createEl('div', { cls: 'row-spacy'});
-				const labelEl = litEl.createEl('a', { text: lit.label, cls: 'bold' });
-				labelEl.onclick = () => {
-					const literatureLinkPath = `${this.settings.literatureNote}#${lit.label}`;
-					this.app.workspace.openLinkText(literatureLinkPath, "")
-				}
-				litEl.createEl('div', { text: lit.title });
-				new CollapsibleCitation(litEl, lit, false);
-			});
+			if (literature.citations.length) {
+				insertWithCheckbox(this.structure, 'literature', (state) => {
+					applyStateClass(contentEl, !state);
+				});
+				contentEl = this.structure.createEl('div')
+				literature.citations.forEach((lit: CitationType) => {
+					const litEl = contentEl.createEl('div', { cls: 'row-spacy'});
+					const labelEl = litEl.createEl('a', { text: lit.label, cls: 'bold' });
+					labelEl.onclick = () => {
+						const literatureLinkPath = `${this.settings.literatureNote}#${lit.label}`;
+						this.app.workspace.openLinkText(literatureLinkPath, "")
+					}
+					litEl.createEl('div', { text: lit.title });
+					new CollapsibleCitation(litEl, lit, false);
+				});
+			}
 
 			if (literature.incorrect.length > 0) {
+				contentEl = this.structure.createEl('div')
 				contentEl.createEl('strong', { text: 'Incorrect citations' });
 				literature.incorrect.forEach((label: string) => {
 					const litEl = contentEl.createEl('div', { cls: 'row-spacy'});
