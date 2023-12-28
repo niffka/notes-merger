@@ -83,7 +83,7 @@ ${this.keywords()}\n
 
 ${body}
 
-${thesisParts.citation && citations ? `\\begin{literatura}\n${citations}\n\\end{literatura}` : ''}
+${thesisParts.literature && citations ? `\\begin{literatura}\n${citations}\n\\end{literatura}` : ''}
 
 ${thesisParts.attachment && attachments ? `\\prilohy\n${attachments}` : ''}
 

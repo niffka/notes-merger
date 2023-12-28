@@ -329,8 +329,7 @@ export class GenerateLatex {
 		latex = this.removeMarkdownLeftovers(latex);
 		latex = this.basicRef(latex); 
 		
-		// @ts-ignore
-		// latex = latex.replaceAll("#", "\\#");
+		latex = this.fixLatexSpecialCharacters(latex)
 
 		return latex;
 	}
@@ -420,7 +419,7 @@ export class GenerateLatex {
 				return this.inlineCode(ast);
 			}
 
-			return this.fixLatexSpecialCharacters(ast.value);
+			return ast.value;
 		}
 
 		if (ast.type == "heading") {
@@ -483,9 +482,12 @@ export class GenerateLatex {
 
 	refCite(latex: string) { 
 		const links = [...latex.matchAll(/\[\[.+#(\w+)\]\]/g)];
+		console.log(links); 
 		links.forEach(([raw, clean]: [string, string]) => {
+			console.log('found', raw, clean);
 			latex = latex.replace(raw, `\\cite{${clean}}`);
 		});
+		console.log(latex);
 		return latex;
 	}
 
@@ -855,6 +857,7 @@ export class GenerateLatex {
 		latex = latex.replaceAll("_", "\\_");
 		latex = latex.replaceAll("%", "\\%");
 		latex = latex.replaceAll("$", "\\$");
+		latex = latex.replaceAll("#", "\\#");
 
 		return latex;
 	}
