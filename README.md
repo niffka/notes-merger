@@ -44,12 +44,12 @@ Default settings:
 Markdown translation to Custom Latex template (PEF Mendelu template)
 
 ### Heading
-`# H1 -> \kapitola{H1}`
-`## H2 -> \sekce{H2}`
-`### H3 -> \podsekce{H3}`
-`#### H4 -> \subsubsection*{H6}`
-`##### H5 -> \subsubsection*{H5}`
-`#3##### H6 -> \subsubsection*{H6}`
+```# H1 -> \kapitola{H1}```
+```## H2 -> \sekce{H2}```
+```### H3 -> \podsekce{H3}```
+```#### H4 -> \subsubsection*{H6}```
+```##### H5 -> \subsubsection*{H5}```
+```#3##### H6 -> \subsubsection*{H6}```
 
 ### Table
 #### Markdown
@@ -96,6 +96,7 @@ row2 & col3 & col4 \\ \hline
 ```
 ```
 optional metadata: `language label|caption` (e.g. )
+```
 
 #### Latex
 ```

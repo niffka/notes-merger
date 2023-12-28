@@ -38,14 +38,6 @@ export default class NotesMergerPlugin extends Plugin {
 		this.addRibbonIcon("scroll", "Notes Merger", () => {
 			this.activateNotesMergerView();
 		});
-
-		// this.addCommand({
-		// 	id: "generate latex",
-		// 	name: "generate latex from markdown",
-		// 	callback: () => {
-		// 		new GenerateLatex(this.app, this.settings);
-		// 	},
-		// });
 	}
 
 	async activateNotesMergerView() {

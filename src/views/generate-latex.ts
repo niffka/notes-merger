@@ -734,7 +734,7 @@ export class GenerateLatex {
 		}
 
 		return (
-			`\\begin{lstlisting}[language=${ast.lang ?? "java"}, caption=${metadata.cite ?? ""}, label={${metadata.label ?? ''}}]\n` 
+			`\\begin{lstlisting}[language=java, caption=${metadata.cite ?? ""}, label={${metadata.label ?? ''}}]\n` 
 			+ ast.value + `\n\\end{lstlisting}`
 		); 
 	}
