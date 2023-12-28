@@ -482,12 +482,9 @@ export class GenerateLatex {
 
 	refCite(latex: string) { 
 		const links = [...latex.matchAll(/\[\[.+#(\w+)\]\]/g)];
-		console.log(links); 
 		links.forEach(([raw, clean]: [string, string]) => {
-			console.log('found', raw, clean);
 			latex = latex.replace(raw, `\\cite{${clean}}`);
 		});
-		console.log(latex);
 		return latex;
 	}
 
@@ -629,10 +626,11 @@ export class GenerateLatex {
 			if (match) {
 				latex = latex.replace(raw, `\\ref{${clean}}`);
 			} else {
-				this.errors.push({ type: 'image', item: [raw, clean], message: `Reference to image '${clean}' ('${raw}') is not valid.` })
+				this.errors.push({ type: 'ref_image', item: [raw, clean], message: `Reference to image '${clean}' ('${raw}') is not valid.` })
+				console.error(this.errors)
 			}
 		});
-		
+
 		return latex;
 	}
 

@@ -44,12 +44,14 @@ Default settings:
 Markdown translation to Custom Latex template (PEF Mendelu template)
 
 ### Heading
-```# H1 -> \kapitola{H1}```
-```## H2 -> \sekce{H2}```
-```### H3 -> \podsekce{H3}```
-```#### H4 -> \subsubsection*{H6}```
-```##### H5 -> \subsubsection*{H5}```
-```#3##### H6 -> \subsubsection*{H6}```
+```
+# H1 -> \kapitola{H1}
+## H2 -> \sekce{H2}
+### H3 -> \podsekce{H3}
+#### H4 -> \subsubsection*{H6}
+##### H5 -> \subsubsection*{H5}
+###### H6 -> \subsubsection*{H6}
+```
 
 ### Table
 #### Markdown
@@ -84,19 +86,29 @@ row2 & col3 & col4 \\ \hline
 \endtab
 ```
 
+### Table: Reference table in text
+
+### Markdown
+```
+The table [tableWithRowsAndColumns] will be translated to Latex by Notes Merger plugin.
+
+| foo | bar | baz |
+| ---- | ---- | ---- |
+| row1 | col1 | col2 |
+| row2 | col3 | col4 |
+[tableWithRowsAndColumns] [cite] [source]
+```
+
 ### Codeblock
 #### Markdown
 ```
-	```json packageFile|This is package.json file
-	{
-		
-		"name": "notes-merger",
-		...
-	}
+```json packageFile|This is package.json file
+{
+	
+	"name": "notes-merger",
+	...
 ```
-```
-optional metadata: `language label|caption` (e.g. )
-```
+optional metadata: `language label|caption`
 
 #### Latex
 ```
@@ -138,7 +150,7 @@ optional: description, source
 \endobrl{black cat crossing street \obrzdroj{hhttps://kittenpictures.com/blackcat.jpg}}{blackcat.jpg}
 ```
 
-### Reference an Image
+### Image: Reference image in text
 Reference image in text.
 #### Markdown
 ```
