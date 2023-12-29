@@ -313,5 +313,5 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit \cite{literatureNote#lab
 
 #### Latex
 ```
-{\it italic}
+\textit{italic}
 ```
