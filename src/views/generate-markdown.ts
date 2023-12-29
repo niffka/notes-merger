@@ -1,17 +1,14 @@
 import { App, Notice, TAbstractFile, TFile } from "obsidian";
 import { fixSpaceInName, getNoteByName } from '../utils';
-import { LinkTreeType, BuildLinkTreeType, SlideType, CitationType, LatexImageType, LatexImagesStatus } from "src/types";
+import { LinkTreeType, BuildLinkTreeType, SlideType } from "src/types";
 import { NotesMergerPluginSettingsType } from '../../main';
 import { SlidesMarkdown } from './generate-slides-markdown';
-import { GenerateLatex } from 'src/views/generate-latex';
 import {
-	Button, 
+	Button,
 	BaseLink,
-	SaveModal, 
+	SaveModal,
 	TreeMenu,
-	SlidesModal,
-	Checkbox,
-	ErrorIcon,
+	SlidesModal
 } from '../components/index';
 
 
@@ -27,7 +24,6 @@ export class GenerateMarkdown {
 	markdown: string = "";
 	ignoredLinks: string[] = [];
 	images: string[] = [];
-	generateLatex: GenerateLatex;
 	subbar: Element;
 	structure: Element;
 	static imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'tiff', 'bmp'].map((it: string) => `.${it}`);
@@ -109,14 +105,14 @@ export class GenerateMarkdown {
 			cl = fixSpaceInName(cl);
 
 			if (!!GenerateMarkdown.imageTypes.filter((it: string) => cl.includes(it.toLowerCase())).length) {
-				this.images.push(cl)
+				this.images.push(cl);
 				return false;
 			}
 
 			let isInline = true;
 			if (text.includes(this.settings.listOfLinksKeyword)) {
 				let [inlineText, linksText] = text.split(this.settings.listOfLinksKeyword);
-				if (!inlineText.includes(`[[${cl}]]`)){
+				if (!inlineText.includes(`[[${cl}]]`)) {
 					isInline = false;
 				}
 					
@@ -256,7 +252,7 @@ export class GenerateMarkdown {
 
 	async generateNotesHierarchy(links: LinkTreeType[]) {
 		const linksObj: BuildLinkTreeType = await this.createParentStructure(links, 0, []);
-		let linksArr: LinkTreeType[] = [];
+		const linksArr: LinkTreeType[] = [];
 
 		Object.keys(linksObj).forEach(key => {
 			const {parentRef, ...rest} = linksObj[key as keyof BuildLinkTreeType] as BuildLinkTreeType; 
@@ -268,9 +264,9 @@ export class GenerateMarkdown {
 			for(let i = 0; i < arr.length; i++) {
 				if(arr[i].parent == parent) {
 					const grandChildren = buildChildrenFromParents(arr, arr[i].name);
-					if(grandChildren.length) {
+					if(grandChildren.length)
 						arr[i].children = grandChildren;
-					}
+
 					children.push(arr[i]);
 				}
 			}

@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as Path from 'path';
 import { SlideType } from "src/types";
-import { tpl_con_title, tpl_con_last, tpl_con_basic, tpl_con_image, tpl_con_split } from 'src/slideshow-template/default';
+import { tplConTitle, tplConLast, tplConBasic, tplConImage, tplConSplit } from 'src/slideshow-template/default';
 export class SlidesMarkdown {
 
 	slides: SlideType[] = [];
@@ -114,7 +114,13 @@ export class SlidesMarkdown {
 		if (!fs.existsSync(vaultPath))
 			fs.mkdirSync(vaultPath);
 
-		const templates: Record<string, string> = {tpl_con_title, tpl_con_last, tpl_con_basic, tpl_con_image, tpl_con_split};
+		const templates: Record<string, string> = {
+			"tpl-title": tplConTitle,
+			"tpl-last": tplConLast,
+			"tpl-basic": tplConBasic,
+			"tpl-image": tplConImage,
+			"tpl-split": tplConSplit
+		};
 
 		Object.keys(templates).forEach((templateName: string) => {
 			fs.writeFileSync(Path.join(vaultPath, `${templateName}.md`), templates[templateName]);
