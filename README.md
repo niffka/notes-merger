@@ -141,7 +141,7 @@ optional metadata: `language label|caption`
 ![black cat crossing street](blackcat.jpg "https://kittenpictures.com/blackcat.jpg")
 ```
 
-optional: description, source
+optional: `description, source`
 
 #### Latex
 ```
