@@ -40,7 +40,7 @@ export class SlidesMarkdown {
 	}
 
 	createTitleSlide(title: string) {
-		return `\n<!-- slide template="[[tpl_con_title]]" -->\n\n` +
+		return `\n<!-- slide template="[[tpl-title]]" -->\n\n` +
 				`::: title\n\n` + 
 				`## _${title}_\n` +
 				`:::\n\n` +
@@ -51,13 +51,13 @@ export class SlidesMarkdown {
 
 	createLastSlide() {
 		return `\n---\n` +
-			`<!-- slide template="[[tpl_con_last]]" -->\n\n` +
+			`<!-- slide template="[[tpl-last]]" -->\n\n` +
 			`#### _Ďakujem za pozornosť_\n\n`;
 	}
 
 	createBasicSlide(name: string) {
 		return `\n---\n` + 
-			`<!-- slide template="[[tpl_con_basic]]" -->\n\n` +
+			`<!-- slide template="[[tpl-basic]]" -->\n\n` +
 			`::: title\n` +
 			`### _**${name}**_\n` +
 			`:::\n\n` +
@@ -70,7 +70,7 @@ export class SlidesMarkdown {
 
 	createImageSlide(name: string) {
 		return `\n---\n` + 
-		`<!-- slide template="[[tpl_con_image]]" -->\n\n` +
+		`<!-- slide template="[[tpl-image]]" -->\n\n` +
 
 		`::: title\n`+
 		`### _**${name}**_\n`+
@@ -87,7 +87,7 @@ export class SlidesMarkdown {
 
 	createSplitSlide(name: string) {
 		return `\n---\n` + 
-			`<!-- slide template="[[tpl_con_split]]" -->\n\n` +
+			`<!-- slide template="[[tpl-split]]" -->\n\n` +
 			`::: title\n` + 
 			`### _**${name}**_\n` +
 			`:::\n\n` + 
