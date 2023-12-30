@@ -608,7 +608,7 @@ export class GenerateLatex {
 				+ `\\nazev{${title && `${title}.`}${webDomain && `${webDomain}`}} [online].`
 				+ `${publishedPlace && `${publishedPlace}: `}${publisher && `${publisher}, `}`
 				+ `${publishedDate && `${publishedDate}, `}${revisionDate && `${revisionDate} `}`
-				+ `\n[${date}].${source && ` Dostupné z: ${this.fixLatexSpecialCharacters(source)}`}}`;
+				+ ` [${date}].${source && ` Dostupné z: ${this.fixLatexSpecialCharacters(source)}`}}`;
 			}
 
 		}).join("\n\n");
@@ -736,7 +736,7 @@ export class GenerateLatex {
 	}
 
 	inlineCode(ast: InlineCode) {
-		return `\\[ ${this.fixLatexSpecialCharacters(ast.value)} \\]`
+		return "{\\it " + this.fixLatexSpecialCharacters(ast.value) + "}";
 	}
 
 	removeMarkdownLeftovers(latex: string) {
