@@ -65,6 +65,7 @@ export class PEFTemplate extends LatexTemplate {
 % \\bakalarska % implicitní
 % \\diplomova
 % \\disertacni
+% \\vedecky
 ${this.thesisType()}
 
 \\brokenpenalty 10000

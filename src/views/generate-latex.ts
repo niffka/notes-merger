@@ -439,7 +439,7 @@ export class GenerateLatex {
 
 		if (ast.type == 'image') {
 			return (
-				`\\obrazek\n\\vlozobrbox{${ast.url}}{1.0\\textwidth}{!}\n` +
+				`\\obrazek\n\\vlozobrbox{${ast.url}}{0.7\\textwidth}{!}\n` +
 				`\\endobrl{${ast?.alt ? `${this.fixLatexSpecialCharacters(ast?.alt)}`: ''}` +
 				`${ast?.title ? ` \\obrzdroj{${this.fixLatexSpecialCharacters(ast.title)}}` : ''}}\n{${ast.url}}`
 			)
