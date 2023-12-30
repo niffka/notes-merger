@@ -57,10 +57,10 @@ export class GenerateLatex {
 	}
 
 	async loadRequirements(isPlain: boolean = false) {
-		this.activeNoteText = await this.getActiveNote(this.app, this.activeNote);
+		this.images = [];
 
+		this.activeNoteText = await this.getActiveNote(this.app, this.activeNote);
 		this.allFiles = app.vault.getAllLoadedFiles();
-		
 		let images: LatexImagesStatus = this.getImages(this.activeNoteText, this.allFiles);
 		let metadata: Record<string, string | null> | null  = null;
 		if (!isPlain) {
@@ -296,7 +296,6 @@ export class GenerateLatex {
 			// plain thesis
 			this.generateLatexFiles(latex);
 		} else {
-
 			// with template
 			const latexCitations = this.createLatexCitations(this.literature.citations);
 
@@ -367,7 +366,7 @@ export class GenerateLatex {
 			images.forEach((image: TAbstractFile) => {
 				
 				const oldPath = Path.join(basePath, image.path);
-				const newPath = Path.join(imageDirPath, image.name);
+				const newPath = Path.join(imageDirPath, image.name.toLowerCase());
 
 				fs.copyFileSync(oldPath, newPath); 
 			})
@@ -439,7 +438,6 @@ export class GenerateLatex {
 		}
 
 		if (ast.type == 'image') {
-			this.images.push(ast);
 			return (
 				`\\obrazek\n\\vlozobrbox{${ast.url}}{1.0\\textwidth}{!}\n` +
 				`\\endobrl{${ast?.alt ? `${this.fixLatexSpecialCharacters(ast?.alt)}`: ''}` +
@@ -483,7 +481,7 @@ export class GenerateLatex {
 	refCite(latex: string) { 
 		const links = [...latex.matchAll(/\[\[.+#(\w+)\]\]/g)];
 		links.forEach(([raw, clean]: [string, string]) => {
-			latex = latex.replace(raw, `\\cite{${clean}}`);
+			latex = latex.replace(raw, `\\cite{${clean.toLowerCase()}}`);
 		});
 		return latex;
 	}
@@ -593,7 +591,7 @@ export class GenerateLatex {
 					publisher, authors
 				} = citation as BookCitationType;
 
-				return `\\citace{${label}}{${inline}}{\n\\autor{${authors.join(', ')}}\n`
+				return `\\citace{${label.toLowerCase()}}{${inline}}{\n\\autor{${authors.join(', ')}}\n`
 					+ `\\nazev{${title}.}${format && ` [${format}].`} ${publishedPlace}: ${publisher && `${publisher}, `}`
 					+ `${publishedYear && ` ${publishedYear}. `}${edition && ` ${edition}.`}${isbn && ` ${isbn}.`}`
 					+ ` [${date}].${source && ` Dostupné z: ${this.fixLatexSpecialCharacters(source)}`}}`;
@@ -606,7 +604,7 @@ export class GenerateLatex {
 					publisher, authors
 				} = citation as WebCitationType;
 
-				return `\\citace{${label}}{${inline}}{\n\\autor{${authors.join(',')}}\n`
+				return `\\citace{${label.toLowerCase()}}{${inline}}{\n\\autor{${authors.join(',')}}\n`
 				+ `\\nazev{${title && `${title}.`}${webDomain && `${webDomain}`}} [online].`
 				+ `${publishedPlace && `${publishedPlace}: `}${publisher && `${publisher}, `}`
 				+ `${publishedDate && `${publishedDate}, `}${revisionDate && `${revisionDate} `}`
@@ -774,15 +772,17 @@ export class GenerateLatex {
 		images.forEach(([raw]) => {
 			try {
 				const root = fromMarkdown(raw).children;
-				const { url, title, type, alt } = ((root[0] as Parent).children[0] as Image);
-				if (type === 'image')
+				const image = ((root[0] as Parent).children[0] as Image);
+				if (image.type === 'image') {
 					correctImages.push({
-						raw: url,
-						desc: alt ?? undefined,
-						name: url,
-						source: title ?? undefined,
-						path: allFiles.find((file: TFile) => file.name.toLowerCase() === url.toLowerCase())?.path ?? url
+						raw: image.url,
+						desc: image.alt ?? undefined,
+						name: image.url,
+						source: image.title ?? undefined,
+						path: allFiles.find((file: TFile) => file.name.toLowerCase() === image?.url.toLowerCase())?.path ?? image?.url
 					});
+					this.images.push(image);
+				}
 			} catch (e) {
 				console.error(`Something went wrong: ${e}`);
 			}

@@ -85,7 +85,7 @@ ${body}
 
 ${thesisParts.literature && citations ? `\\begin{literatura}\n${citations}\n\\end{literatura}` : ''}
 
-${thesisParts.attachment && attachments ? `\\prilohy\n${attachments}` : ''}
+${thesisParts.attachments && attachments ? `\\prilohy\n${attachments}` : ''}
 
 \\end{document}
 `;

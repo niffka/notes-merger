@@ -12,7 +12,7 @@ export interface NotesMergerPluginSettingsType {
 }
 
 const DEFAULT_SETTINGS: NotesMergerPluginSettingsType = {
-	listOfLinksKeyword: 'Next',
+	listOfLinksKeyword: 'Next:',
 	literatureNote: 'Literature',
 	insertPreviewContent: true,
 	insertIndexNote: false,
@@ -83,7 +83,7 @@ class NotesMergerPluginSettingTab extends PluginSettingTab {
 			.setName('List of links keyword')
 			.setDesc('Keyword to detect list of links to be subchapters at the end of note.')
 			.addText(text => text
-				.setPlaceholder('Defaults to "Next"')
+				.setPlaceholder('Defaults to "Next:"')
 				.setValue(this.plugin.settings.listOfLinksKeyword)
 				.onChange(async (value) => {
 					this.plugin.settings.listOfLinksKeyword = value;
