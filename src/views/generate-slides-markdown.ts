@@ -76,7 +76,7 @@ export class SlidesMarkdown {
 		`### _**${name}**_\n`+
 		`:::\n\n`+
 		
-		`:::middle\n`+
+		`::: middle\n`+
 		`![[write name of image here|number of pixels]]\n`+
 		`:::<!-- element align="center" -->\n\n` +
 		

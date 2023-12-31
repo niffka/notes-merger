@@ -592,8 +592,9 @@ export class GenerateLatex {
 				} = citation as BookCitationType;
 
 				return `\\citace{${label.toLowerCase()}}{${inline}}{\n\\autor{${authors.join(', ')}}\n`
-					+ `\\nazev{${title}.}${format && ` [${format}].`} ${publishedPlace}: ${publisher && `${publisher}, `}`
-					+ `${publishedYear && ` ${publishedYear}. `}${edition && ` ${edition}.`}${isbn && ` ${isbn}.`}`
+					+ `\\nazev{${title && `${title}.`}}${format && ` [${format}].`}`
+					+ `${publishedPlace && ` ${publishedPlace}:`}${publisher && ` ${publisher},`}`
+					+ `${publishedYear && ` ${publishedYear}.`}${edition && ` ${edition}.`}${isbn && ` ${isbn}.`}`
 					+ ` [${date}].${source && ` Dostupné z: ${this.fixLatexSpecialCharacters(source)}`}}`;
 
 			} else if (citation.type.toLowerCase() === 'web') {
@@ -605,9 +606,9 @@ export class GenerateLatex {
 				} = citation as WebCitationType;
 
 				return `\\citace{${label.toLowerCase()}}{${inline}}{\n\\autor{${authors.join(',')}}\n`
-				+ `\\nazev{${title && `${title}.`}${webDomain && `${webDomain}`}} [online].`
-				+ `${publishedPlace && `${publishedPlace}: `}${publisher && `${publisher}, `}`
-				+ `${publishedDate && `${publishedDate}, `}${revisionDate && `${revisionDate} `}`
+				+ `\\nazev{${title && `${title}.`}${webDomain && ` ${webDomain}`}} [online].`
+				+ `${publishedPlace && ` ${publishedPlace}:`}${publisher && ` ${publisher},`}`
+				+ `${publishedDate && ` ${publishedDate},`}${revisionDate && ` ${revisionDate}`}`
 				+ ` [${date}].${source && ` Dostupné z: ${this.fixLatexSpecialCharacters(source)}`}}`;
 			}
 
